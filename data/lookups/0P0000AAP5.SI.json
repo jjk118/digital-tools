@@ -1,0 +1,11 @@
+{
+  "request_id": "ff02c823-6cb4-42f5-aa01-2084d7c7da7e",
+  "generated_at": "2026-10-15T14:54:20.448375Z",
+  "instrument": {
+    "ticker": "0P0000AAP5.SI",
+    "name": "BGF World Mining A2 SGD Hedged",
+    "region": "SES",
+    "type": "Fund",
+    "metadata_source": "Yahoo Finance quote webpage"
+  }
+}

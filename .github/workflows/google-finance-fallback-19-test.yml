@@ -1,0 +1,37 @@
+name: Google Finance fallback verification 19 tickers (read-only)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/google-finance-fallback-19-test.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extract exact symbol primary price, currency and date
+        run: |
+          python - <<'PY'
+          import json,sys
+          sys.path.insert(0,'scripts')
+          import google_price_fallback as g
+          cfg=json.load(open('data/stock-tickers.json'))
+          items=[x['ticker'] for x in cfg['instruments'] if x['enabled']]
+          results=[]
+          for ticker in items:
+              symbol=g.google_symbol(ticker)
+              try:
+                  data=g.retrieve(ticker)
+                  result={'ticker':ticker,'symbol':symbol,'price':data['current_price'],'currency':data['currency'],'source':data['source'],'quote_time':data['price_as_of'],'status':'PASS'}
+              except Exception as e:result={'ticker':ticker,'symbol':symbol,'status':'FAIL','reason':str(e)[:180]}
+              print('FALLBACK_QUOTE_RESULT',json.dumps(result));results.append(result)
+          passed=sum(x['status']=='PASS' for x in results)
+          print('FALLBACK_QUOTE_SUMMARY',json.dumps({'passed':passed,'total':len(results),'failed':len(results)-passed,'ath_verified':False,'production_unchanged':True}))
+          if passed!=len(results):raise SystemExit(1)
+          PY
