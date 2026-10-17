@@ -1,19 +1,19 @@
 {
   "version": 1,
-  "revision": 36,
+  "revision": 37,
   "refreshIntervalMinutes": 15,
   "priceChecker": {
     "enabled": true,
-    "intervalMinutes": 8,
+    "intervalMinutes": 6,
     "cycles": 10,
     "maxActiveCheckers": 3,
     "categories": {
       "ETF": true,
       "Stock": true,
-      "Fund": false
+      "Fund": true
     }
   },
-  "saved_at": "2026-10-15T15:22:55.177Z",
+  "saved_at": "2026-10-17T15:13:17.919Z",
   "instruments": [
     {
       "ticker": "ES3.SI",
