@@ -322,7 +322,7 @@ def previous_day_change(ticker,price_as_of):
     """Previous two completed sessions before the quote's market date."""
     from html import unescape
     from zoneinfo import ZoneInfo
-    zone=ZoneInfo('Asia/Singapore' if ticker.endswith('.SI') else 'America/New_York')
+    zone=ZoneInfo('Asia/Singapore' if ticker.endswith('.SI') else 'Europe/Berlin' if ticker.endswith('.MU') else 'America/New_York')
     market_date=dt.datetime.fromisoformat(price_as_of).astimezone(zone).date()
     end=int(dt.datetime.now(dt.timezone.utc).timestamp())
     errors=[]
@@ -374,7 +374,29 @@ def previous_day_change(ticker,price_as_of):
             return validated(rows,'Yahoo Finance daily chart ('+host+')')
         except Exception as error:
             errors.append(str(error))
-    raise ValueError('Historical closes unavailable across Yahoo sources: '+'; '.join(errors[-3:]))
+    if ticker.endswith('.MU'):
+        try:
+            # A one-time verified exchange snapshot is evidence for its exact
+            # dates only. It is never treated as a newly fetched market history.
+            saved=json.loads((ROOT/'data/verified-munich-closes.json').read_text(encoding='utf-8'))
+            if (ticker!='GQC0.MU' or saved.get('ticker')!=ticker or
+                saved.get('isin')!='LU0690374961' or saved.get('currency')!='EUR' or
+                saved.get('source_url')!='https://www.boerse-muenchen.de/fonds/LU0690374961/'):
+                raise ValueError('Saved exchange history identity mismatch')
+            rows=[(dt.date.fromisoformat(p['date']),p['close']) for p in saved['closes']]
+            verified=validated(rows,'Börse München dated closes (one-time verified)')
+            expected=market_date-dt.timedelta(days=1)
+            while expected.weekday()>=5:
+                expected-=dt.timedelta(days=1)
+            # Conservative on holidays: fail rather than silently reuse a date.
+            if verified['prev_day_change_as_of']!=expected.isoformat():
+                raise ValueError('Saved exchange closes do not cover the required previous session')
+            verified['prev_day_change_retrieved_at']=saved['verified_at']
+            verified['prev_day_change_source_url']=saved['source_url']
+            return verified
+        except Exception as error:
+            errors.append(str(error))
+    raise ValueError('Historical closes unavailable: '+'; '.join(errors[-4:]))
 
 def dividends(ticker,current_price):
     """Retrieve dividend events during the scheduled dividend refresh."""
@@ -427,7 +449,7 @@ def retrieve(x,old,history=False,include_dividend=False):
                 result['ath']=max(result['ath'],result['current_price'])
             result['drawdown_pct']=percentage(result.get('current_price'),result['ath'])
         except Exception as error:
-            result['ath_error']='Historical scrape failed; saved ATH and timestamp retained. '+str(error)
+            result['ath_error']=('Historical scrape failed; saved ATH and timestamp retained. ' if finite(result.get('ath')) else 'ATH unavailable; historical coverage could not be verified. ')+str(error)
     return result
 
 def refresh(history=False, eligible_tickers=None, include_dividend=False):
