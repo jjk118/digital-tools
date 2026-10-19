@@ -318,11 +318,28 @@ def historical_high_verified(ticker):
         except Exception as chart_error:
             raise ValueError('Yahoo historical webpage failed: '+str(page_error)+'; '+str(chart_error))
 
+from functools import lru_cache
+
+@lru_cache(maxsize=32)
+def munich_history(ticker):
+    """Cache exchange closes for one checker cycle, preserving their dates."""
+    import subprocess,sys
+    from munich_history_fallback import INSTRUMENTS
+    if ticker not in INSTRUMENTS: raise ValueError('No verified Munich ticker/ISIN mapping')
+    process=subprocess.run([sys.executable,str(ROOT/'scripts/munich_history_fallback.py'),ticker],
+                           capture_output=True,text=True,timeout=110)
+    if process.returncode: raise ValueError('Munich dated history failed: '+(process.stdout or process.stderr)[-500:])
+    data=json.loads(process.stdout)
+    if (data.get('ticker')!=ticker or data.get('isin')!=INSTRUMENTS[ticker] or
+        data.get('currency')!='EUR' or data.get('source')!='Börse München official dated history'):
+        raise ValueError('Munich historical identity or currency mismatch')
+    return data
+
 def previous_day_change(ticker,price_as_of):
     """Previous two completed sessions before the quote's market date."""
     from html import unescape
     from zoneinfo import ZoneInfo
-    zone=ZoneInfo('Asia/Singapore' if ticker.endswith('.SI') else 'America/New_York')
+    zone=ZoneInfo('Asia/Singapore' if ticker.endswith('.SI') else 'Europe/Berlin' if ticker.endswith('.MU') else 'America/New_York')
     market_date=dt.datetime.fromisoformat(price_as_of).astimezone(zone).date()
     end=int(dt.datetime.now(dt.timezone.utc).timestamp())
     errors=[]
@@ -374,7 +391,19 @@ def previous_day_change(ticker,price_as_of):
             return validated(rows,'Yahoo Finance daily chart ('+host+')')
         except Exception as error:
             errors.append(str(error))
-    raise ValueError('Historical closes unavailable across Yahoo sources: '+'; '.join(errors[-3:]))
+    if ticker.endswith('.MU'):
+        try:
+            history=munich_history(ticker)
+            rows=[(dt.date.fromisoformat(p['date']),p['close']) for p in history['closes']]
+            verified=validated(rows,history['source'])
+            recent=dt.date.fromisoformat(verified['prev_day_change_as_of'])
+            if (market_date-recent).days>7:
+                raise ValueError('Munich completed-session prices are stale')
+            verified['prev_day_change_source_url']=history['url']
+            return verified
+        except Exception as error:
+            errors.append(str(error))
+    raise ValueError('Historical closes unavailable: '+'; '.join(errors[-4:]))
 
 def dividends(ticker,current_price):
     """Retrieve dividend events during the scheduled dividend refresh."""
@@ -427,10 +456,11 @@ def retrieve(x,old,history=False,include_dividend=False):
                 result['ath']=max(result['ath'],result['current_price'])
             result['drawdown_pct']=percentage(result.get('current_price'),result['ath'])
         except Exception as error:
-            result['ath_error']='Historical scrape failed; saved ATH and timestamp retained. '+str(error)
+            result['ath_error']=('Historical scrape failed; saved ATH and timestamp retained. ' if finite(result.get('ath')) else 'ATH unavailable; historical coverage could not be verified. ')+str(error)
     return result
 
 def refresh(history=False, eligible_tickers=None, include_dividend=False):
+    munich_history.cache_clear()
     with LOCK: cfg=validate(read_config())
     path=ROOT/'market-data.json'
     old=json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
