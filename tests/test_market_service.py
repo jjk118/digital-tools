@@ -108,7 +108,7 @@ class ValidateConfigTests(unittest.TestCase):
 
 
 class QuoteChartTests(unittest.TestCase):
-    def test_uses_chart_previous_close_for_mutual_funds(self):
+    def test_rejects_chart_baseline_without_verified_daily_close(self):
         original_fetch = market_service.fetch
         original_now = market_service.dt.datetime
 
@@ -138,15 +138,12 @@ class QuoteChartTests(unittest.TestCase):
 
             market_service.fetch = fake_fetch
             market_service.dt.datetime = FixedDateTime
-            result = market_service.quote_chart("0P0000Z32L.SI")
+            with self.assertRaisesRegex(ValueError, "Previous session close unavailable"):
+                market_service.quote_chart("0P0000Z32L.SI")
         finally:
             market_service.fetch = original_fetch
             market_service.dt.datetime = original_now
 
-        self.assertEqual(result["current_price"], 7.5065)
-        self.assertEqual(result["prev_close"], 7.5107)
-        self.assertAlmostEqual(result["current_pct_change"], -0.05592022048543921)
-        self.assertEqual(result["currency"], "SGD")
 
 
 if __name__ == "__main__":

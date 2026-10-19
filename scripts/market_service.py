@@ -174,6 +174,36 @@ def quote_webpage(ticker):
     return {'current_price':cur,'prev_close':prev,'current_pct_change':percentage(cur,prev),'price_as_of':dt.datetime.fromtimestamp(stamp,dt.timezone.utc).isoformat(),'source':'Yahoo Finance quote webpage','price_retrieved_at':now(),**({'currency':currency} if currency else {})}
 
 
+def previous_session_close(ticker, quote_time, currency):
+    """Use a completed daily close; chartPreviousClose is the range baseline."""
+    from zoneinfo import ZoneInfo
+    errors=[]
+    for host in ('query1.finance.yahoo.com','query2.finance.yahoo.com'):
+        try:
+            url='https://'+host+'/v8/finance/chart/'+urllib.parse.quote(ticker)+'?range=3mo&interval=1d'
+            items=json.loads(fetch(url)).get('chart',{}).get('result') or []
+            if len(items)!=1: raise ValueError('No unique daily chart')
+            item=items[0]; meta=item.get('meta') or {}
+            if meta.get('symbol','').upper()!=ticker.upper() or meta.get('currency')!=currency:
+                raise ValueError('Daily close ticker or currency mismatch')
+            zone=ZoneInfo(meta['exchangeTimezoneName'])
+            quote_date=quote_time.astimezone(zone).date()
+            stamps=item.get('timestamp') or []
+            quotes=item.get('indicators',{}).get('quote') or []
+            closes=quotes[0].get('close',[]) if quotes else []
+            if len(stamps)!=len(closes): raise ValueError('Daily timestamps and closes differ')
+            points=[(dt.datetime.fromtimestamp(ts,dt.timezone.utc).astimezone(zone).date(),close)
+                    for ts,close in zip(stamps,closes) if finite(ts) and finite(close) and close>0]
+            points=[(day,close) for day,close in points if day<quote_date]
+            if not points: raise ValueError('No completed close before quote date')
+            day,close=max(points,key=lambda x:x[0])
+            if (quote_date-day).days>10: raise ValueError('Previous session close is outdated')
+            return {'prev_close':close,'prev_close_as_of':day.isoformat(),
+                    'prev_close_source':'Yahoo Finance verified daily close ('+host+')'}
+        except Exception as error: errors.append(str(error))
+    raise ValueError('Previous session close unavailable: '+'; '.join(errors))
+
+
 def quote_chart(ticker):
     """Yahoo per-ticker chart metadata fallback; regular session only."""
     errors=[]
@@ -189,16 +219,18 @@ def quote_chart(ticker):
             if not isinstance(currency,str) or not currency: raise ValueError('Missing quote currency')
             cur=meta.get('regularMarketPrice')
             prev=meta.get('previousClose')
-            if not finite(prev):
-                prev=meta.get('chartPreviousClose')
             stamp=meta.get('regularMarketTime')
-            if not finite(cur) or cur<=0 or not finite(prev) or prev<=0: raise ValueError('Missing regular price or previous close')
+            if not finite(cur) or cur<=0: raise ValueError('Missing regular price')
             if not finite(stamp) or stamp<=0: raise ValueError('Missing original market quote timestamp')
             quote_time=dt.datetime.fromtimestamp(stamp,dt.timezone.utc)
             if quote_time>dt.datetime.now(dt.timezone.utc)+dt.timedelta(minutes=5): raise ValueError('Future quote timestamp')
+            close_data={}
+            if not finite(prev) or prev<=0:
+                close_data=previous_session_close(ticker,quote_time,currency)
+                prev=close_data['prev_close']
             return {'current_price':cur,'prev_close':prev,'current_pct_change':percentage(cur,prev),
                     'price_as_of':quote_time.isoformat(),'source':'Yahoo Finance individual ticker chart',
-                    'price_retrieved_at':now(),'currency':currency}
+                    'price_retrieved_at':now(),'currency':currency,**close_data}
         except Exception as error: errors.append(host+': '+str(error))
     raise ValueError('Yahoo individual ticker chart unavailable: '+'; '.join(errors))
 
