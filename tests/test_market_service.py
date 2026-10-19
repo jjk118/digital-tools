@@ -97,12 +97,27 @@ class ValidateConfigTests(unittest.TestCase):
         self.assertEqual(result["priceChecker"]["cycles"], 12)
         self.assertFalse(result["priceChecker"]["categories"]["Fund"])
 
-    def test_rejects_more_than_200_tickers(self):
-        with self.assertRaisesRegex(ValueError, "Expected at most 200 tickers"):
+    def test_accepts_400_tickers(self):
+        entries = [
+            {
+                "ticker": f"TEST{i:03d}",
+                "enabled": True,
+                "name": f"Test Instrument {i}",
+                "region": "Test Market",
+                "type": "Stock",
+                "metadata_source": "Test fixture",
+            }
+            for i in range(400)
+        ]
+        result = market_service.validate({"version": 1, "instruments": entries})
+        self.assertEqual(len(result["instruments"]), 400)
+
+    def test_rejects_more_than_400_tickers(self):
+        with self.assertRaisesRegex(ValueError, "Expected at most 400 tickers"):
             market_service.validate(
                 {
                     "version": 1,
-                    "tickers": [{"ticker": f"AAPL{i}", "enabled": True} for i in range(201)],
+                    "tickers": [{"ticker": f"AAPL{i}", "enabled": True} for i in range(401)],
                 }
             )
 
