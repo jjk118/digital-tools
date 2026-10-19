@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-18T23:38:33.807588Z",
+  "generated_at": "2026-10-19T00:52:57.365185Z",
   "config_revision": 38,
   "instruments": [
     {
       "ticker": "ES3.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:23.966808Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:49.078542Z",
       "dividend_per_share": 0.093,
       "dividend_yield_pct": 3.2351872046528536,
       "ex_dividend_date": "13 Aug 2026",
@@ -13,7 +13,7 @@
     },
     {
       "ticker": "GQC0.MU",
-      "dividend_retrieved_at": "2026-10-18T23:38:24.144302Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:49.220677Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -22,7 +22,7 @@
     },
     {
       "ticker": "QQQ",
-      "dividend_retrieved_at": "2026-10-18T23:38:24.854271Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:49.947053Z",
       "dividend_per_share": 0.751,
       "dividend_yield_pct": 0.4354747816286278,
       "ex_dividend_date": "21 Sep 2026",
@@ -31,7 +31,7 @@
     },
     {
       "ticker": "QQQM",
-      "dividend_retrieved_at": "2026-10-18T23:38:25.010923Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.076201Z",
       "dividend_per_share": 0.313,
       "dividend_yield_pct": 0.450283993704236,
       "ex_dividend_date": "21 Sep 2026",
@@ -40,7 +40,7 @@
     },
     {
       "ticker": "SPY",
-      "dividend_retrieved_at": "2026-10-18T23:38:25.220042Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.179430Z",
       "dividend_per_share": 1.889,
       "dividend_yield_pct": 0.9935145758270554,
       "ex_dividend_date": "18 Sep 2026",
@@ -49,7 +49,7 @@
     },
     {
       "ticker": "VOO",
-      "dividend_retrieved_at": "2026-10-18T23:38:25.390658Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.321282Z",
       "dividend_per_share": 1.823,
       "dividend_yield_pct": 1.0587078291358447,
       "ex_dividend_date": "28 Sep 2026",
@@ -58,7 +58,7 @@
     },
     {
       "ticker": "VTI",
-      "dividend_retrieved_at": "2026-10-18T23:38:25.545452Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.440657Z",
       "dividend_per_share": 0.956,
       "dividend_yield_pct": 1.0556847648835779,
       "ex_dividend_date": "28 Sep 2026",
@@ -67,7 +67,7 @@
     },
     {
       "ticker": "1155.KL",
-      "dividend_retrieved_at": "2026-10-18T23:38:25.689092Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.562783Z",
       "dividend_per_share": 0.31,
       "dividend_yield_pct": 6.406406406406406,
       "ex_dividend_date": "23 Sep 2026",
@@ -76,7 +76,7 @@
     },
     {
       "ticker": "AAPL",
-      "dividend_retrieved_at": "2026-10-18T23:38:25.851743Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.694448Z",
       "dividend_per_share": 0.27,
       "dividend_yield_pct": 0.30862400279508534,
       "ex_dividend_date": "10 Aug 2026",
@@ -85,7 +85,7 @@
     },
     {
       "ticker": "AMZN",
-      "dividend_retrieved_at": "2026-10-18T23:38:26.098135Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:50.824991Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -94,7 +94,7 @@
     },
     {
       "ticker": "BN4.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:27.018904Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:51.676970Z",
       "dividend_per_share": 0.15,
       "dividend_yield_pct": 3.564356435643564,
       "ex_dividend_date": "11 Aug 2026",
@@ -103,7 +103,7 @@
     },
     {
       "ticker": "D05.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:27.176454Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:51.803346Z",
       "dividend_per_share": 0.81,
       "dividend_yield_pct": 4.2909189043313996,
       "ex_dividend_date": "14 Aug 2026",
@@ -112,7 +112,7 @@
     },
     {
       "ticker": "GOOGL",
-      "dividend_retrieved_at": "2026-10-18T23:38:27.319796Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:51.927470Z",
       "dividend_per_share": 0.22,
       "dividend_yield_pct": 0.25250300948354326,
       "ex_dividend_date": "04 Sep 2026",
@@ -121,7 +121,7 @@
     },
     {
       "ticker": "META",
-      "dividend_retrieved_at": "2026-10-18T23:38:27.449354Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.055778Z",
       "dividend_per_share": 0.525,
       "dividend_yield_pct": 0.2960561096817397,
       "ex_dividend_date": "21 Sep 2026",
@@ -130,7 +130,7 @@
     },
     {
       "ticker": "MSFT",
-      "dividend_retrieved_at": "2026-10-18T23:38:27.667136Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.184010Z",
       "dividend_per_share": 0.91,
       "dividend_yield_pct": 0.6880257064549665,
       "ex_dividend_date": "20 Aug 2026",
@@ -139,7 +139,7 @@
     },
     {
       "ticker": "NDAQ",
-      "dividend_retrieved_at": "2026-10-18T23:38:27.901192Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.306919Z",
       "dividend_per_share": 0.31,
       "dividend_yield_pct": 1.2344365222943494,
       "ex_dividend_date": "11 Sep 2026",
@@ -148,7 +148,7 @@
     },
     {
       "ticker": "NVDA",
-      "dividend_retrieved_at": "2026-10-18T23:38:28.063285Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.412334Z",
       "dividend_per_share": 0.25,
       "dividend_yield_pct": 0.24284313267641153,
       "ex_dividend_date": "10 Sep 2026",
@@ -157,7 +157,7 @@
     },
     {
       "ticker": "O39.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:28.212526Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.531415Z",
       "dividend_per_share": 0.47,
       "dividend_yield_pct": 3.6206896551724133,
       "ex_dividend_date": "17 Aug 2026",
@@ -166,7 +166,7 @@
     },
     {
       "ticker": "SHEL",
-      "dividend_retrieved_at": "2026-10-18T23:38:28.373309Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.657188Z",
       "dividend_per_share": 0.7812,
       "dividend_yield_pct": 2.8336771048190514,
       "ex_dividend_date": "14 Aug 2026",
@@ -175,7 +175,7 @@
     },
     {
       "ticker": "TSLA",
-      "dividend_retrieved_at": "2026-10-18T23:38:28.537909Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:52.786815Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -184,7 +184,7 @@
     },
     {
       "ticker": "U11.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:29.576394Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:53.670163Z",
       "dividend_per_share": 0.88,
       "dividend_yield_pct": 3.821196827685652,
       "ex_dividend_date": "17 Aug 2026",
@@ -193,7 +193,7 @@
     },
     {
       "ticker": "Z74.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:29.724819Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:53.801602Z",
       "dividend_per_share": 0.103,
       "dividend_yield_pct": 4.425837320574163,
       "ex_dividend_date": "31 Jul 2026",
@@ -202,7 +202,7 @@
     },
     {
       "ticker": "0P00006G0E.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:29.887792Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:53.914874Z",
       "dividend_per_share": 0.007732,
       "dividend_yield_pct": 5.176526378186129,
       "ex_dividend_date": "01 Oct 2026",
@@ -211,7 +211,7 @@
     },
     {
       "ticker": "0P00006OE7.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:30.047555Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:54.052392Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -220,7 +220,7 @@
     },
     {
       "ticker": "0P00006ONO.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:30.642980Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:54.673956Z",
       "dividend_per_share": 0.022,
       "dividend_yield_pct": 3.806357975560654,
       "ex_dividend_date": "01 Oct 2026",
@@ -229,7 +229,7 @@
     },
     {
       "ticker": "0P00009VED.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:30.801190Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:54.800466Z",
       "dividend_per_share": 0.045,
       "dividend_yield_pct": 8.766233766233766,
       "ex_dividend_date": "01 Oct 2026",
@@ -238,7 +238,7 @@
     },
     {
       "ticker": "0P0000AAP5.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:30.942871Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:54.910429Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -247,7 +247,7 @@
     },
     {
       "ticker": "0P0000IYVB.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:31.600907Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:55.546311Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -256,7 +256,7 @@
     },
     {
       "ticker": "0P0000IYVJ.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:32.347651Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:56.204794Z",
       "dividend_per_share": null,
       "dividend_yield_pct": null,
       "ex_dividend_date": null,
@@ -265,7 +265,7 @@
     },
     {
       "ticker": "0P0000TZQ7.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:33.148076Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:56.890027Z",
       "dividend_per_share": 0.00497,
       "dividend_yield_pct": 6.399071207430341,
       "ex_dividend_date": "01 Oct 2026",
@@ -274,7 +274,7 @@
     },
     {
       "ticker": "0P0000Y077.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:33.292004Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:57.016048Z",
       "dividend_per_share": 0.040177,
       "dividend_yield_pct": 7.0401842105263155,
       "ex_dividend_date": "29 Sep 2026",
@@ -283,7 +283,7 @@
     },
     {
       "ticker": "0P0000Z32L.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:33.426949Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:57.132707Z",
       "dividend_per_share": 0.05381,
       "dividend_yield_pct": 8.290482143827797,
       "ex_dividend_date": "15 Oct 2026",
@@ -292,7 +292,7 @@
     },
     {
       "ticker": "0P0001I7S9.SI",
-      "dividend_retrieved_at": "2026-10-18T23:38:33.595539Z",
+      "dividend_retrieved_at": "2026-10-19T00:52:57.247680Z",
       "dividend_per_share": 0.0042,
       "dividend_yield_pct": 6.180257510729613,
       "ex_dividend_date": "30 Sep 2026",
