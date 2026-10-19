@@ -41,7 +41,7 @@ def retrieve(ticker):
             page = browser.new_page(locale='de-DE')
             response = page.goto(url, wait_until='domcontentloaded', timeout=30000)
             if not response or response.status != 200 or page.url != url:
-                raise ValueError('Munich instrument page unavailable or redirected')
+                raise ValueError('Munich page response: '+str(response.status if response else None)+'; URL: '+page.url+'; page text: '+page.locator('body').inner_text()[:700])
             necessary = page.get_by_role('button', name=re.compile(r'(?i)(nur notwendige|nur erforderliche|necessary only|ablehnen)'))
             if necessary.count() == 1 and necessary.is_visible():
                 necessary.click()
