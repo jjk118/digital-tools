@@ -15,6 +15,13 @@ function setTypeVisible(type,visible){
 }
 function toggleSettings(open){
  const panel=$('settingsPanel'),button=$('settingsButton'),next=open??!panel.classList.contains('open');
+ if(next){
+  const filename=decodeURIComponent(location.pathname.split('/').pop()||'index.html');
+  const expected=filename.replace(/\.html?$/i,'');
+  const entered=window.prompt('Enter the settings password:');
+  if(entered===null)return;
+  if(entered!==expected){window.alert('Incorrect password.');return;}
+ }
  panel.classList.toggle('open',next);button.setAttribute('aria-expanded',String(next));
  if(next)panel.scrollIntoView({behavior:'smooth',block:'start'});
 }

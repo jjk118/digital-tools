@@ -23,9 +23,19 @@ async function ready(doc){for(let i=0;i<20;i++){if(doc.getElementById('status').
 test('main index monitor loads empty, allow temporary selections and reset on a new visit',async()=>{
  for(const key of Object.keys(defaults.pages)){
   const {ctx,doc}=loadPage(key);await ready(doc);assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0,key+' must start empty');assert.equal(doc.getElementById('displayEmptyState'),null,key+' must not show a Settings prompt');
-  doc.getElementById('settingsLink').click();assert.ok(doc.getElementById('settingsPanel').classList.contains('open'),key+' must open Settings from the empty page');
+  const attempts=['wrong',null,'index','index'];let prompts=0,alerts=0;ctx.prompt=()=>{prompts++;return attempts.shift();};ctx.alert=()=>alerts++;
+  const dot=doc.getElementById('settingsLink'),panel=doc.getElementById('settingsPanel');
+  dot.click();assert.equal(panel.classList.contains('open'),false,'wrong password must not open settings');assert.equal(alerts,1);
+  dot.click();assert.equal(panel.classList.contains('open'),false,'cancel must keep settings closed');
+  dot.click();assert.ok(panel.classList.contains('open'),key+' correct filename password must open Settings');
+  doc.getElementById('settingsCloseButton').click();assert.equal(prompts,3,'closing must not ask for password');
+  dot.click();assert.equal(prompts,4,'every reopening must ask again');assert.equal(panel.classList.contains('open'),true);
   const check=doc.getElementById('settingsList').querySelector('input');assert.ok(check,key+' must list selectable tickers');check.checked=true;check.onchange();assert.equal(doc.querySelectorAll('tr[data-ticker]').length,1,key+' must show selected ticker');assert.equal(doc.getElementById('displayEmptyState'),null);
   await (key==='index-funds.html'?ctx.refreshFunds():ctx.refresh());assert.equal(doc.querySelectorAll('tr[data-ticker]').length,1,key+' retains selection on data update');
+  for(const [path,password] of [['/stock-monitor/tools/kwc.html','kwc'],['/stock-monitor/index-funds.html','index-funds'],['/stock-monitor/','index']]){
+   ctx.toggleSettings(false);ctx.location.pathname=path;ctx.prompt=()=>password;dot.click();assert.equal(panel.classList.contains('open'),true,path+' derives its password from the filename');
+  }
   const next=loadPage(key);await ready(next.doc);assert.equal(next.doc.querySelectorAll('tr[data-ticker]').length,0,key+' resets next visit');
  }
 });
+
