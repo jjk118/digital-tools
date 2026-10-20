@@ -21,9 +21,10 @@ Element.prototype.showModal=function(){this.open=true;};Element.prototype.close=
 function loadPage(key,storage=new Map(),displayDefaults=defaults){const doc=parse(read('stock-monitor/'+key));doc.body=doc.querySelector('body');doc.createElement=tag=>new Element(tag);doc.getElementById=id=>doc.querySelector('#'+id);doc.currentScript={src:'https://myai118.github.io/digital-tools/stock-monitor/display-defaults.js'};
  const ctx={document:doc,location:{href:'https://myai118.github.io/digital-tools/stock-monitor/'+key,pathname:'/digital-tools/stock-monitor/'+key,hash:''},URL,TextEncoder,TextDecoder,Uint8Array,atob,btoa,console,Blob,AbortController,setInterval(){return 1;},clearInterval(){},setTimeout(){},clearTimeout(){},addEventListener(){},navigator:{userAgent:'test',maxTouchPoints:0},localStorage:{getItem(key){assert.ok(key.startsWith('stock-monitor:settings-failures:'));return storage.get(key)||null;},setItem(key,value){assert.ok(key.startsWith('stock-monitor:settings-failures:'));storage.set(key,value);}},async fetch(url){let p=String(url),data;if(p.includes('stock-monitor-display-defaults.json'))data=displayDefaults;else if(p.includes('stock-tickers.json'))data=JSON.parse(read('data/stock-tickers.json'));else if(p.includes('dividend-data.json'))data=JSON.parse(read('dividend-data.json'));else if(p.includes('market-data.json'))data=JSON.parse(read('market-data.json'));else throw Error('Unexpected request '+p);return {ok:true,json:async()=>structuredClone(data)};}};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(read('stock-monitor/display-defaults.js'),ctx);const script=key==='index-funds.html'?'stock-monitor/funds-monitor.js':key.startsWith('tools/')?'stock-monitor/tools/monitor-page-defaults.js':'stock-monitor/monitor-index-defaults.js';vm.runInContext(read(script),ctx);return {ctx,doc};}
 async function ready(doc){for(let i=0;i<20;i++){if(doc.getElementById('status').textContent.includes('Latest'))return;await new Promise(resolve=>setImmediate(resolve));}assert.fail(doc.getElementById('status').textContent);}
-test('all four monitor pages load empty, support configured passwords and reset selections each visit',async()=>{
+test('index has no settings dot or password prompt while other monitor pages retain visit settings',async()=>{
  for(const key of Object.keys(defaults.pages)){
   const {ctx,doc}=loadPage(key);await ready(doc);assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0,key+' must start empty');assert.equal(doc.getElementById('displayEmptyState'),null,key+' must not show a Settings prompt');
+  if(key==='index.html'){for(const id of ['settingsButton','settingsLink','settingsPanel','settingsPasswordDialog'])assert.equal(doc.getElementById(id),null,'index.html must not expose '+id);continue;}
   const dot=doc.getElementById('settingsLink'),panel=doc.getElementById('settingsPanel');
   const settle=()=>new Promise(resolve=>setImmediate(resolve));
   const enter=async password=>{doc.getElementById('settingsPasswordInput').value=password;doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await settle();};
@@ -55,14 +56,12 @@ test('kwc, syc and klz use their own initial passwords from the actual configura
  }
 });
 
-test('two failed passwords lock this page across reload and directory addresses, with no effect on other pages',async()=>{
- const storage=new Map(),page=loadPage('index.html',storage);await ready(page.doc);
+test('two failed passwords lock a monitor page across reload without locking other pages',async()=>{
+ const storage=new Map(),page=loadPage('tools/kwc.html',storage);await ready(page.doc);
  const enter=async password=>{page.doc.getElementById('settingsPasswordInput').value=password;page.doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));};
  page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));await enter('bad');assert.match(page.doc.getElementById('settingsPasswordError').textContent,/One retry remaining/);
  page.doc.getElementById('settingsPasswordDialog').querySelectorAll('button').find(x=>x.textContent==='Cancel').click();await new Promise(resolve=>setImmediate(resolve));
  page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));await enter('bad-again');assert.equal(page.doc.getElementById('settingsPasswordDialog'),null);assert.match(page.doc.getElementById('status').textContent,/Settings locked/);
- page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.equal(page.doc.getElementById('settingsPasswordDialog'),null);
- const revisit=loadPage('index.html',storage);await ready(revisit.doc);revisit.ctx.location.pathname='/digital-tools/stock-monitor/';revisit.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.equal(revisit.doc.getElementById('settingsPasswordDialog'),null);assert.match(revisit.doc.getElementById('status').textContent,/Settings locked/);
- revisit.ctx.location.pathname='/digital-tools/stock-monitor/tools/kwc.html';revisit.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.ok(revisit.doc.getElementById('settingsPasswordDialog'),'different pages keep separate failure counts');
+ const revisit=loadPage('tools/kwc.html',storage);await ready(revisit.doc);revisit.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.equal(revisit.doc.getElementById('settingsPasswordDialog'),null);assert.match(revisit.doc.getElementById('status').textContent,/Settings locked/);
+ const other=loadPage('tools/syc.html',storage);await ready(other.doc);other.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.ok(other.doc.getElementById('settingsPasswordDialog'),'other monitor pages retain independent settings');
 });
-
