@@ -3,11 +3,22 @@
   "pages": {
     "index.html": {
       "visibleTickers": [
-        "0P00015GRZ.SI",
-        "SHEL"
+        "0P00006FYP.SI",
+        "0P00006FYU",
+        "AAPL",
+        "AMZN",
+        "GOOGL",
+        "GQC0.MU",
+        "META",
+        "MSFT",
+        "NVDA",
+        "QQQ",
+        "QQQM",
+        "SHEL",
+        "SPY"
       ],
       "settingsPassword": "index",
-      "savedAt": "2026-10-20T06:57:06.102Z"
+      "savedAt": "2026-10-20T07:08:19.233Z"
     },
     "tools/kwc.html": {
       "visibleTickers": [],
