@@ -59,7 +59,7 @@ window.StockMonitorDisplay = (() => {
     const current = await request('/contents/' + configPath + '?ref=main&ts=' + Date.now());
     const data = validateDocument(decode(current.content));
     if (JSON.stringify(data.pages[key] || null) !== JSON.stringify(entry)) throw Error('This page\'s defaults changed elsewhere. Reload before saving.');
-    const next = {visibleTickers, savedAt:new Date().toISOString()};
+    const next = {...data.pages[key], visibleTickers, savedAt:new Date().toISOString()};
     data.pages[key] = next;
     const result = await request('/contents/' + configPath, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:'Set default tickers for stock-monitor/' + key, branch:'main', sha:current.sha, content:encode(data)})});
     if (!result.commit || !result.commit.sha) throw Error('GitHub did not confirm the save.');
@@ -99,5 +99,15 @@ window.StockMonitorDisplay = (() => {
   loaded = false; loading = null;
   initialise(config, hidden, redraw).then(redraw).catch(error => status(error.message));
  });
- return {initialise, updateVisibility, pageKey:key};
+ async function settingsPassword() {
+  const url = new URL(configURL); url.searchParams.set('ts', Date.now());
+  const response = await fetch(url, {cache:'no-store'});
+  if (!response.ok) throw Error('Settings password unavailable. Please try again later.');
+  const data = validateDocument(await response.json());
+  const password = data.pages[key]?.settingsPassword;
+  if (typeof password !== 'string' || !password.trim()) throw Error('No settings password has been configured for this page.');
+  return password;
+ }
+ return {initialise, updateVisibility, settingsPassword, pageKey:key};
 })();
+

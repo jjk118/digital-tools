@@ -23,6 +23,17 @@ function harness(page='index.html',pages={'index.html':{visibleTickers:[]}},opti
 test('initial and subsequent page loads hide every category despite legacy browser preferences',async()=>{
  for(let visit=0;visit<2;visit++){const h=harness(),hidden=new Set();await h.api.initialise(cfg,hidden,()=>{});assert.deepEqual([...hidden].sort(),['D05.SI','FUND','SPY']);}
 });
+
+test('settings password comes from each page configuration and changes are read fresh',async()=>{
+ const pages={'index.html':{visibleTickers:[],settingsPassword:'custom-index'},'tools/kwc.html':{visibleTickers:[],settingsPassword:'custom-kwc'}};
+ const h=harness('index.html',pages);assert.equal(await h.api.settingsPassword(),'custom-index');pages['index.html'].settingsPassword='new-value';assert.equal(await h.api.settingsPassword(),'new-value');
+ assert.equal(await harness('tools/kwc.html',pages).api.settingsPassword(),'custom-kwc');
+ for(const call of h.calls)assert.equal(call.opts.cache,'no-store');
+});
+test('missing, empty and unavailable passwords keep settings closed without filename fallback',async()=>{
+ for(const value of [undefined,'','   ',123])await assert.rejects(harness('index.html',{'index.html':{visibleTickers:[],settingsPassword:value}}).api.settingsPassword(),/No settings password/);
+ await assert.rejects(harness('index.html',{}, {fail:true}).api.settingsPassword(),/unavailable/);
+});
 test('visitor selections survive data refreshes but reset on reload',async()=>{
  const h=harness(),hidden=new Set();await h.api.initialise(cfg,hidden,()=>{});hidden.delete('D05.SI');await h.api.initialise(cfg,hidden,()=>{});assert.equal(hidden.has('D05.SI'),false);
  const next=harness(),reloaded=new Set();await next.api.initialise(cfg,reloaded,()=>{});assert.equal(reloaded.has('D05.SI'),true);
@@ -40,11 +51,12 @@ test('unavailable or unconfigured defaults block rendering rather than show all'
  await assert.rejects(harness('index.html',{}).api.initialise(cfg,new Set(),()=>{}),/No default ticker list/);
 });
 test('owner save captures the checked tickers, keeps other pages and sends credentials only to GitHub',async()=>{
- let written;const h=harness('index.html',{'index.html':{visibleTickers:[]},'tools/kwc.html':{visibleTickers:['SPY']}},{onPut(body){written=body;}}),hidden=new Set();await h.api.initialise(cfg,hidden,()=>{});
+ let written;const h=harness('index.html',{'index.html':{visibleTickers:[],settingsPassword:'owner-secret'},'tools/kwc.html':{visibleTickers:['SPY']}},{onPut(body){written=body;}}),hidden=new Set();await h.api.initialise(cfg,hidden,()=>{});
  h.nodes.input.value='test-token';await h.nodes.connect.onclick();assert.equal(h.nodes.input.value,'');hidden.delete('D05.SI');await h.nodes.save.onclick();
- const saved=JSON.parse(Buffer.from(written.content,'base64').toString('utf8'));assert.deepEqual(saved.pages['index.html'].visibleTickers,['D05.SI']);assert.deepEqual(saved.pages['tools/kwc.html'].visibleTickers,['SPY']);assert.equal(written.sha,'latest-blob');
+ const saved=JSON.parse(Buffer.from(written.content,'base64').toString('utf8'));assert.deepEqual(saved.pages['index.html'].visibleTickers,['D05.SI']);assert.deepEqual(saved.pages['tools/kwc.html'].visibleTickers,['SPY']);assert.equal(written.sha,'latest-blob');assert.equal(saved.pages['index.html'].settingsPassword,'owner-secret');
  assert.equal(h.calls[0].opts.headers,undefined);assert.equal(h.calls.find(x=>x.opts.method==='PUT').opts.headers.Authorization,'Bearer test-token');assert.match(h.status.textContent,/Saved 1 default tickers/);
 });
 test('owner cannot overwrite newer defaults on the same page',async()=>{
  let put=false;const h=harness('index.html',{'index.html':{visibleTickers:[]}},{onPut(){put=true;}});await h.api.initialise(cfg,new Set(),()=>{});h.nodes.input.value='test-token';await h.nodes.connect.onclick();h.apiDoc.pages['index.html']={visibleTickers:['SPY']};await h.nodes.save.onclick();assert.equal(put,false);assert.match(h.status.textContent,/changed elsewhere/);
 });
+
