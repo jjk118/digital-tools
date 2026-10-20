@@ -21,8 +21,8 @@ function harness(){
 test('Admin default ticker selection is page-specific, survives filtering, saves, and reloads',async()=>{
  const h=harness(),n=h.nodes;await h.ready;
  assert.equal(n.defaultTickerPage.value,'index.html');
- assert.equal(n.toggleDefaultETF.textContent,'Show all ETFs');
- assert.equal(n.toggleDefaultStock.textContent,'Hide all stocks');
+ assert.equal(n.toggleDefaultETF.textContent,'Hide all ETFs');
+ assert.equal(n.toggleDefaultStock.textContent,'Show all stocks');
  await n.toggleDefaultStock.onclick();
  assert.deepEqual(Array.from((()=>{const a=[];for(const x of n.defaultTickerList.children)if(x.children[0].checked)a.push(x.children[0].value);return a;})()),['AAPL','MSFT','SPY']);
  assert.equal(n.toggleDefaultStock.textContent,'Hide all stocks');
