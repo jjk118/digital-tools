@@ -39,8 +39,9 @@ window.StockMonitorDisplay = (() => {
   mounted = true;
   const box = document.createElement('details'); box.className = 'owner-defaults'; box.open = true;
   box.innerHTML = '<summary>Save default ticker list for this page</summary><p>Select the tickers to show above, connect GitHub, then save them here. The saved list loads for every visitor after publication completes.</p><p><label>GitHub token <input type="password" autocomplete="off" spellcheck="false" aria-label="Default settings GitHub token"></label></p><div class="settings-actions"><button type="button" data-action="connect">Connect GitHub</button><button type="button" data-action="disconnect">Disconnect</button><button type="button" data-action="save" disabled>Save current selection as defaults</button></div><p id="ownerDefaultsStatus" role="status">Not connected. Use a token restricted to myai118/digital-tools with Contents read/write permission. The token stays only in this tab until disconnect or reload. Never share it in chat.</p>';
-  const tickerList = panel.querySelector('#settingsList');
-  if (tickerList) panel.insertBefore(box, tickerList); else panel.append(box);
+  box.style.flexBasis = '100%';
+  const settingsHead = panel.querySelector('.settings-head');
+  if (settingsHead) settingsHead.append(box); else panel.append(box);
   const input = box.querySelector('input'), save = box.querySelector('[data-action="save"]'), connect = box.querySelector('[data-action="connect"]');
   connect.onclick = async () => {
    const token = input.value.trim(); input.value = '';
