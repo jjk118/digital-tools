@@ -7,18 +7,21 @@
         "0P00006FYU",
         "AAPL",
         "AMZN",
+        "D05.SI",
         "GOOGL",
         "GQC0.MU",
         "META",
         "MSFT",
         "NVDA",
+        "O39.SI",
         "QQQ",
         "QQQM",
         "SHEL",
-        "SPY"
+        "SPY",
+        "U11.SI"
       ],
       "settingsPassword": "index",
-      "savedAt": "2026-10-20T07:08:52.525Z"
+      "savedAt": "2026-10-20T07:10:29.227Z"
     },
     "tools/kwc.html": {
       "visibleTickers": [],
