@@ -21,47 +21,29 @@ Element.prototype.showModal=function(){this.open=true;};Element.prototype.close=
 function loadPage(key,storage=new Map(),displayDefaults=defaults){const doc=parse(read('stock-monitor/'+key));doc.body=doc.querySelector('body');doc.createElement=tag=>new Element(tag);doc.getElementById=id=>doc.querySelector('#'+id);doc.currentScript={src:'https://myai118.github.io/digital-tools/stock-monitor/display-defaults.js'};
  const ctx={document:doc,location:{href:'https://myai118.github.io/digital-tools/stock-monitor/'+key,pathname:'/digital-tools/stock-monitor/'+key,hash:''},URL,TextEncoder,TextDecoder,Uint8Array,atob,btoa,console,Blob,AbortController,setInterval(){return 1;},clearInterval(){},setTimeout(){},clearTimeout(){},addEventListener(){},navigator:{userAgent:'test',maxTouchPoints:0},localStorage:{getItem(key){assert.ok(key.startsWith('stock-monitor:settings-failures:'));return storage.get(key)||null;},setItem(key,value){assert.ok(key.startsWith('stock-monitor:settings-failures:'));storage.set(key,value);}},async fetch(url){let p=String(url),data;if(p.includes('stock-monitor-display-defaults.json'))data=displayDefaults;else if(p.includes('stock-tickers.json'))data=JSON.parse(read('data/stock-tickers.json'));else if(p.includes('dividend-data.json'))data=JSON.parse(read('dividend-data.json'));else if(p.includes('market-data.json'))data=JSON.parse(read('market-data.json'));else throw Error('Unexpected request '+p);return {ok:true,json:async()=>structuredClone(data)};}};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(read('stock-monitor/display-defaults.js'),ctx);const script=key==='index-funds.html'?'stock-monitor/funds-monitor.js':key.startsWith('tools/')?'stock-monitor/tools/monitor-page-defaults.js':'stock-monitor/monitor-index-defaults.js';vm.runInContext(read(script),ctx);return {ctx,doc};}
 async function ready(doc){for(let i=0;i<20;i++){if(doc.getElementById('status').textContent.includes('Latest'))return;await new Promise(resolve=>setImmediate(resolve));}assert.fail(doc.getElementById('status').textContent);}
-test('index has no settings dot or password prompt while other monitor pages retain visit settings',async()=>{
+test('all four monitor pages load without visitor settings and hide the overall instrument total',async()=>{
  for(const key of Object.keys(defaults.pages)){
-  const {ctx,doc}=loadPage(key);await ready(doc);assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0,key+' must start empty');assert.equal(doc.getElementById('displayEmptyState'),null,key+' must not show a Settings prompt');
-  if(key==='index.html'){for(const id of ['settingsButton','settingsLink','settingsPanel','settingsPasswordDialog'])assert.equal(doc.getElementById(id),null,'index.html must not expose '+id);continue;}
-  const dot=doc.getElementById('settingsLink'),panel=doc.getElementById('settingsPanel');
-  const settle=()=>new Promise(resolve=>setImmediate(resolve));
-  const enter=async password=>{doc.getElementById('settingsPasswordInput').value=password;doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await settle();};
-  dot.click();await settle();assert.equal(doc.getElementById('settingsPasswordInput').type,'password');await enter('index');assert.equal(panel.classList.contains('open'),false);assert.match(doc.getElementById('settingsPasswordError').textContent,/Incorrect/);
-  doc.getElementById('settingsPasswordDialog').querySelectorAll('button').find(x=>x.textContent==='Cancel').click();await settle();assert.equal(panel.classList.contains('open'),false);assert.equal(doc.getElementById('settingsPasswordDialog'),null);
-  dot.click();await settle();await enter('owner-secret');assert.ok(panel.classList.contains('open'));assert.equal(doc.getElementById('settingsPasswordDialog'),null);
-  doc.getElementById('settingsCloseButton').click();assert.equal(doc.getElementById('settingsPasswordDialog'),null);
-  dot.click();await settle();assert.ok(doc.getElementById('settingsPasswordDialog'));await enter('owner-secret');assert.equal(panel.classList.contains('open'),true);
-  const check=doc.getElementById('settingsList').querySelector('input');assert.ok(check,key+' must list selectable tickers');check.checked=true;check.onchange();assert.equal(doc.querySelectorAll('tr[data-ticker]').length,1,key+' must show selected ticker');assert.equal(doc.getElementById('displayEmptyState'),null);
-  await (key==='index-funds.html'?ctx.refreshFunds():ctx.refresh());assert.equal(doc.querySelectorAll('tr[data-ticker]').length,1,key+' retains selection on data update');
-  ctx.toggleSettings(false);defaults.pages[key].settingsPassword='changed-secret';dot.click();await settle();await enter('owner-secret');assert.equal(panel.classList.contains('open'),false);await enter('changed-secret');assert.equal(panel.classList.contains('open'),true,'updated config password is read on each opening');defaults.pages[key].settingsPassword='owner-secret';
-  const next=loadPage(key);await ready(next.doc);assert.equal(next.doc.querySelectorAll('tr[data-ticker]').length,0,key+' resets next visit');
+  const {doc}=loadPage(key);await ready(doc);
+  for(const id of ['settingsButton','settingsLink','settingsPanel','settingsPasswordDialog'])assert.equal(doc.getElementById(id),null,key+' must not expose '+id);
+  assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0,key+' starts with its empty owner list');
+  assert.equal(doc.getElementById('tracked').textContent,'0 shown');
+  doc.getElementById('exportExcelButton').click();assert.match(doc.getElementById('status').textContent,/Market Watch Admin/);
+  doc.getElementById('jumpFund').click();assert.match(doc.getElementById('status').textContent,/Market Watch Admin/);
  }
 });
-
-test('kwc, syc and klz use their configured passwords and independent locks',async()=>{
- const actual=JSON.parse(read('data/stock-monitor-display-defaults.json')),storage=new Map();
- for(const name of ['kwc','syc','klz']){
-  const key='tools/'+name+'.html',password=actual.pages[key].settingsPassword;assert.equal(typeof password,'string');assert.ok(password.length);actual.pages[key]={...actual.pages[key],visibleTickers:[]};
-  const page=loadPage(key,storage,actual);await ready(page.doc);assert.equal(page.doc.querySelectorAll('tr[data-ticker]').length,0);
-  page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));
-  const input=page.doc.getElementById('settingsPasswordInput');assert.ok(input);input.value=password;page.doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));assert.ok(page.doc.getElementById('settingsPanel').classList.contains('open'));
-  page.ctx.toggleSettings(false);
-  for(let attempt=0;attempt<2;attempt++){
-   if(!attempt){page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));}
-   page.doc.getElementById('settingsPasswordInput').value='incorrect';page.doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
-  }
-  const revisit=loadPage(key,storage,actual);await ready(revisit.doc);revisit.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.equal(revisit.doc.getElementById('settingsPasswordDialog'),null);assert.match(revisit.doc.getElementById('status').textContent,/Settings locked/);
+test('each page preserves its own defaults through refresh, sorting and Excel export',async()=>{
+ const cfg=JSON.parse(read('data/stock-tickers.json')),tickers=cfg.instruments.filter(x=>x.enabled).slice(0,4).map(x=>x.ticker);
+ assert.equal(tickers.length,4);
+ const custom=structuredClone(defaults);Object.keys(custom.pages).forEach((key,i)=>custom.pages[key].visibleTickers=[tickers[i]]);
+ for(const [i,key] of Object.keys(custom.pages).entries()){
+  const {ctx,doc}=loadPage(key,new Map(),custom);await ready(doc);
+  const rows=()=>doc.querySelectorAll('tr[data-ticker]');assert.deepEqual(rows().map(x=>x.dataset.ticker),[tickers[i]],key);
+  assert.equal(doc.getElementById('tracked').textContent,'1 shown');assert.equal(rows()[0].children.length,11);
+  assert.match(rows()[0].querySelector('a').href,/finance.yahoo.com/);
+  for(const th of doc.querySelectorAll('th[data-sort-key]'))th.querySelector('button').click();
+  await ctx.refresh();assert.deepEqual(rows().map(x=>x.dataset.ticker),[tickers[i]]);
+  let workbook,downloaded;ctx.XlsxWriter={build(value){workbook=value;return 'test';}};ctx.download=(name)=>{downloaded=name;};
+  doc.getElementById('exportExcelButton').click();assert.match(downloaded,/\.xlsx$/);assert.equal(workbook.rows.length,1);assert.equal(workbook.rows[0][2].value,tickers[i]);
+  assert.match(doc.getElementById('reference-time').textContent,/SGT/);
  }
-});
-
-test('two failed passwords lock a monitor page across reload without locking other pages',async()=>{
- const storage=new Map(),page=loadPage('tools/kwc.html',storage);await ready(page.doc);
- const enter=async password=>{page.doc.getElementById('settingsPasswordInput').value=password;page.doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));};
- page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));await enter('bad');assert.match(page.doc.getElementById('settingsPasswordError').textContent,/One retry remaining/);
- page.doc.getElementById('settingsPasswordDialog').querySelectorAll('button').find(x=>x.textContent==='Cancel').click();await new Promise(resolve=>setImmediate(resolve));
- page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));await enter('bad-again');assert.equal(page.doc.getElementById('settingsPasswordDialog'),null);assert.match(page.doc.getElementById('status').textContent,/Settings locked/);
- const revisit=loadPage('tools/kwc.html',storage);await ready(revisit.doc);revisit.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.equal(revisit.doc.getElementById('settingsPasswordDialog'),null);assert.match(revisit.doc.getElementById('status').textContent,/Settings locked/);
- const other=loadPage('tools/syc.html',storage);await ready(other.doc);other.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));assert.ok(other.doc.getElementById('settingsPasswordDialog'),'other monitor pages retain independent settings');
 });

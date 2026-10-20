@@ -5,7 +5,7 @@ let interval, running=false, exportRows=[], latestCfg=null, latestData=null, hid
 const IDS={ETF:['etfRows','etfSection'],Stock:['stockRows','stockSection'],Fund:['fundRows','fundSection']};
 const tableSort={ETF:{key:null,dir:'asc'},Stock:{key:null,dir:'asc'},Fund:{key:null,dir:'asc'}};
 function loadHiddenTickers(){return new Set();}
-function saveHiddenTickers(){/* Selection resets to owner defaults on each visit. */}
+function saveHiddenTickers(){/* Visitor choices last only until the next page load. */}
 function rerender(){if(latestCfg&&latestData)render(latestCfg,latestData);}
 function setTickerVisible(ticker,visible){if(visible)hiddenTickers.delete(ticker);else hiddenTickers.add(ticker);saveHiddenTickers();rerender();}
 function setTypeVisible(type,visible){
@@ -104,7 +104,7 @@ function showExportPanel(name,html,tableHtml){
  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function exportExcel(){
- if(!exportRows.length){$('status').textContent=latestCfg?'No tickers are currently selected for display. Open Settings and show at least one ticker before exporting.':'No monitor data loaded yet. Please wait for the page to finish loading.';return;}
+ if(!exportRows.length){$('status').textContent=latestCfg?'No tickers are configured for display. Set the default list in Market Watch Admin before exporting.':'No monitor data loaded yet. Please wait for the page to finish loading.';return;}
  if(!window.XlsxWriter){$('status').textContent='Excel export is unavailable because xlsx-writer.js did not load. Reload the page and try again.';return;}
  const columns=[['#',6],['Category',10],['Ticker',15],['Name',44],['Region / Market',16],['Currency',10],['Previous Close',14],['Previous Day % Change',15],['Current Price',13],['Current % Change',13],['All-Time High',14],['Drawdown %',12],['Market Time',26],['Retrieved Time',26],['Refresh Status',16],['Dividend / Share',16],['Dividend Yield %',16],['Ex-Dividend Date',20]];
  const text=v=>({value:String(v??''),style:'text'}),num=v=>valid(v)?{value:v,style:'num'}:{style:'num'};
@@ -133,7 +133,7 @@ function render(cfg,data){
  for(const [type,id] of [['ETF','etf'],['Stock','stock'],['Fund','fund']]){const allCount=allActive.filter(x=>x.type===type).length,count=active.filter(x=>x.type===type).length,hidden=allCount-count,section=$(id+'Section');if(!section)continue;section.style.display=count?'':'none';$(id+'Count').textContent='Total '+(type==='ETF'?'ETFs':type==='Fund'?'Funds':'Stocks')+': '+count;}
  sortTable('ETF');sortTable('Stock');sortTable('Fund');
  const latestPriceTime=successful.sort().at(-1)||allActive.map(x=>prices.get(x.ticker)?.price_retrieved_at).filter(Boolean).sort().at(-1),hiddenCount=allActive.length-active.length;
- $('reference-time').textContent=sg(data.last_check_completed_at||data.generated_at||latestPriceTime);$('tracked').textContent=active.length+' shown';
+ $('reference-time').textContent=sg(data.last_check_completed_at||data.generated_at||latestPriceTime);$('tracked').textContent=active.length+' shown'+($('tracked').dataset.hideTotal==='true'?'':' · '+allActive.length+' total instruments');
  clearInterval(interval);interval=setInterval(()=>refresh(false),Math.max(5,Math.min(10,cfg.refreshIntervalMinutes||10))*60000);
  return active.map(x=>prices.get(x.ticker)||{});
 }
@@ -160,15 +160,11 @@ $('jumpETF').onclick=()=>($('etfSection').style.display==='none'?$('stockSection
 const TAB_SECTIONS={jumpFund:'fundSection',jumpETF:'etfSection',jumpStock:'stockSection'};
 function setActiveTab(id){for(const t of Object.keys(TAB_SECTIONS)){const b=$(t);if(b)b.classList.toggle('secondary',t!==id);}}
 for(const t of Object.keys(TAB_SECTIONS)){const b=$(t);if(b)b.addEventListener('click',()=>{const s=$(TAB_SECTIONS[t]);if(t==='jumpFund'&&(!s||s.style.display==='none'))return;setActiveTab(t);});}
-if($('jumpFund'))$('jumpFund').onclick=()=>{const section=$('fundSection');if(!section||section.style.display==='none'){$('status').textContent='No funds are currently shown. Add a fund in Admin, or turn it on in Settings.';return;}section.scrollIntoView({behavior:'smooth'});};window.addEventListener('focus',()=>refresh(false));refresh(false);
+if($('jumpFund'))$('jumpFund').onclick=()=>{const section=$('fundSection');if(!section||section.style.display==='none'){$('status').textContent='No funds are included in this page’s saved defaults. Change the list in Market Watch Admin.';return;}section.scrollIntoView({behavior:'smooth'});};window.addEventListener('focus',()=>refresh(false));refresh(false);
 $('exportExcelButton').onclick=exportExcel;
-$('settingsButton').onclick=()=>toggleSettings(); if($('settingsLink'))$('settingsLink').onclick=e=>{e.preventDefault();toggleSettings();}; if(location.hash==='#settingsPanel')toggleSettings(true);
-$('settingsCloseButton').onclick=()=>toggleSettings(false);
-$('showAllTickersButton').onclick=()=>{hiddenTickers.clear();saveHiddenTickers();rerender();};
-$('hideAllEtfButton').onclick=()=>setTypeVisible('ETF',false);
-$('hideAllStockButton').onclick=()=>setTypeVisible('Stock',false);
+if($('settingsButton'))$('settingsButton').onclick=()=>toggleSettings();if($('settingsLink'))$('settingsLink').onclick=e=>{e.preventDefault();toggleSettings();};if($('settingsPanel')&&location.hash==='#settingsPanel')toggleSettings(true);
+if($('settingsCloseButton'))$('settingsCloseButton').onclick=()=>toggleSettings(false);
+if($('showAllTickersButton'))$('showAllTickersButton').onclick=()=>{hiddenTickers.clear();saveHiddenTickers();rerender();};
+if($('hideAllEtfButton'))$('hideAllEtfButton').onclick=()=>setTypeVisible('ETF',false);
+if($('hideAllStockButton'))$('hideAllStockButton').onclick=()=>setTypeVisible('Stock',false);
 if($('hideAllFundButton'))$('hideAllFundButton').onclick=()=>setTypeVisible('Fund',false);
-
-
-const returnPreviousPageButton=$('returnPreviousPageButton'); if(returnPreviousPageButton)returnPreviousPageButton.onclick=()=>{location.href='https://myai118.github.io/digital-tools/myweb/kwc.html';};
-
