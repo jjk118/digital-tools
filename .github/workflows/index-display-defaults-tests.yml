@@ -1,0 +1,24 @@
+name: Index display defaults tests
+on:
+  push:
+    paths:
+      - stock-monitor/index.html
+      - stock-monitor/monitor-index-defaults.js
+      - stock-monitor/display-defaults.js
+      - stock-monitor/display-defaults.css
+      - data/stock-monitor-display-defaults.json
+      - tests/test_index_display_defaults.cjs
+      - tests/test_index_display_integration.cjs
+      - .github/workflows/index-display-defaults-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/test_index_display_defaults.cjs tests/test_index_display_integration.cjs
