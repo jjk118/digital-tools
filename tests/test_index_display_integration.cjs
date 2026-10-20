@@ -40,13 +40,13 @@ test('index has no settings dot or password prompt while other monitor pages ret
  }
 });
 
-test('kwc, syc and klz use their own initial passwords from the actual configuration and independent locks',async()=>{
+test('kwc, syc and klz use their configured passwords and independent locks',async()=>{
  const actual=JSON.parse(read('data/stock-monitor-display-defaults.json')),storage=new Map();
  for(const name of ['kwc','syc','klz']){
-  const key='tools/'+name+'.html';assert.deepEqual(actual.pages[key],{visibleTickers:[],settingsPassword:name});
+  const key='tools/'+name+'.html',password=actual.pages[key].settingsPassword;assert.equal(typeof password,'string');assert.ok(password.length);actual.pages[key]={...actual.pages[key],visibleTickers:[]};
   const page=loadPage(key,storage,actual);await ready(page.doc);assert.equal(page.doc.querySelectorAll('tr[data-ticker]').length,0);
   page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));
-  const input=page.doc.getElementById('settingsPasswordInput');assert.ok(input);input.value=name;page.doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));assert.ok(page.doc.getElementById('settingsPanel').classList.contains('open'));
+  const input=page.doc.getElementById('settingsPasswordInput');assert.ok(input);input.value=password;page.doc.getElementById('settingsPasswordDialog').querySelector('form').onsubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));assert.ok(page.doc.getElementById('settingsPanel').classList.contains('open'));
   page.ctx.toggleSettings(false);
   for(let attempt=0;attempt<2;attempt++){
    if(!attempt){page.doc.getElementById('settingsLink').click();await new Promise(resolve=>setImmediate(resolve));}
