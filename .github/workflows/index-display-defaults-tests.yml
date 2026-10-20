@@ -7,6 +7,10 @@ on:
       - stock-monitor/admin-page-passwords.js
       - tests/test_admin_page_passwords.cjs
       - stock-monitor/index.html
+      - stock-monitor/tools/kwc.html
+      - stock-monitor/tools/syc.html
+      - stock-monitor/tools/klz.html
+      - stock-monitor/tools/monitor-page-defaults.js
       - stock-monitor/monitor-index-defaults.js
       - stock-monitor/display-defaults.js
       - stock-monitor/display-defaults.css

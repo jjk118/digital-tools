@@ -4,6 +4,18 @@
     "index.html": {
       "visibleTickers": [],
       "settingsPassword": "index"
+    },
+    "tools/kwc.html": {
+      "visibleTickers": [],
+      "settingsPassword": "kwc"
+    },
+    "tools/syc.html": {
+      "visibleTickers": [],
+      "settingsPassword": "syc"
+    },
+    "tools/klz.html": {
+      "visibleTickers": [],
+      "settingsPassword": "klz"
     }
   }
 }
