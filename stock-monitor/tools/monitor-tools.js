@@ -1,15 +1,11 @@
 'use strict';
 const $=id=>document.getElementById(id), valid=n=>typeof n==='number'&&Number.isFinite(n), fmt=n=>valid(n)?n.toFixed(2):'—', pct=n=>valid(n)?(n>=0?'+':'')+n.toFixed(2)+'%':'—', cls=n=>valid(n)&&n>0?'pos':valid(n)&&n<0?'neg':'';
 const sg=t=>t&&!Number.isNaN(Date.parse(t))?new Intl.DateTimeFormat('en-SG',{timeZone:'Asia/Singapore',dateStyle:'medium',timeStyle:'short'}).format(new Date(t))+' SGT':'Not yet retrieved';
-const HIDDEN_TICKERS_KEY='stockMonitorHiddenTickers';
 let interval, running=false, exportRows=[], latestCfg=null, latestData=null, hiddenTickers=loadHiddenTickers();
 const IDS={ETF:['etfRows','etfSection'],Stock:['stockRows','stockSection'],Fund:['fundRows','fundSection']};
 const tableSort={ETF:{key:null,dir:'asc'},Stock:{key:null,dir:'asc'},Fund:{key:null,dir:'asc'}};
-function loadHiddenTickers(){
- try{const saved=JSON.parse(localStorage.getItem(HIDDEN_TICKERS_KEY)||'[]');return new Set(Array.isArray(saved)?saved:[]);}
- catch{return new Set();}
-}
-function saveHiddenTickers(){localStorage.setItem(HIDDEN_TICKERS_KEY,JSON.stringify([...hiddenTickers].sort()));}
+function loadHiddenTickers(){return new Set();}
+function saveHiddenTickers(){/* Visitor choices last only until the next page load. */}
 function rerender(){if(latestCfg&&latestData)render(latestCfg,latestData);}
 function setTickerVisible(ticker,visible){if(visible)hiddenTickers.delete(ticker);else hiddenTickers.add(ticker);saveHiddenTickers();rerender();}
 function setTypeVisible(type,visible){
@@ -100,6 +96,7 @@ function render(cfg,data){
  const allActive=cfg.instruments.filter(x=>x.enabled).sort((a,b)=>({ETF:0,Stock:1,Fund:2}[a.type]??3)-({ETF:0,Stock:1,Fund:2}[b.type]??3)||a.ticker.localeCompare(b.ticker));
  renderSettings(allActive);
  const active=allActive.filter(x=>!hiddenTickers.has(x.ticker));
+ StockMonitorDisplay.updateVisibility(active.length);
  exportRows=active.map(x=>({...x,...(prices.get(x.ticker)||{})}));
  const etfBody=tableBody('etfRows','etfSection'),stockBody=tableBody('stockRows','stockSection');
  etfBody.replaceChildren();stockBody.replaceChildren();const fundBody=$('fundSection')?tableBody('fundRows','fundSection'):null;if(fundBody)fundBody.replaceChildren();let successful=[];
@@ -111,7 +108,7 @@ function render(cfg,data){
  clearInterval(interval);interval=setInterval(()=>refresh(false),Math.max(5,Math.min(10,cfg.refreshIntervalMinutes||10))*60000);
  return active.map(x=>prices.get(x.ticker)||{});
 }
-async function load(){const [cfg,data,dividendData]=await Promise.all([get('/digital-tools/data/stock-tickers.json'),get('/digital-tools/market-data.json'),get('/digital-tools/dividend-data.json').catch(()=>null)]);if(dividendData&&Array.isArray(dividendData.instruments)){const byTicker=new Map(dividendData.instruments.map(x=>[x.ticker,x]));for(const row of (data.instruments||[])){const dividend=byTicker.get(row.ticker);if(dividend)Object.assign(row,dividend);}}return render(cfg,data);}
+async function load(){const [cfg,data,dividendData]=await Promise.all([get('/digital-tools/data/stock-tickers.json'),get('/digital-tools/market-data.json'),get('/digital-tools/dividend-data.json').catch(()=>null)]);if(dividendData&&Array.isArray(dividendData.instruments)){const byTicker=new Map(dividendData.instruments.map(x=>[x.ticker,x]));for(const row of (data.instruments||[])){const dividend=byTicker.get(row.ticker);if(dividend)Object.assign(row,dividend);}}await StockMonitorDisplay.initialise(cfg,hiddenTickers,rerender);return render(cfg,data);}
 async function refresh(){if(running)return;running=true;try{const rows=await load();const failed=rows.filter(x=>x.refresh_error).length;$('status').textContent=failed?failed+' ticker(s) could not be updated; their saved prices and timestamps are retained.':'Latest saved data loaded. Last refresh & check completed: '+$('reference-time').textContent+'.';}catch(e){$('status').textContent=e.message;}finally{running=false;}}
 for(const head of document.querySelectorAll('thead')){
  const type=head.closest('#etfSection')?'ETF':head.closest('#fundSection')?'Fund':'Stock',tr=document.createElement('tr');
@@ -142,4 +139,5 @@ $('showAllTickersButton').onclick=()=>{hiddenTickers.clear();saveHiddenTickers()
 $('hideAllEtfButton').onclick=()=>setTypeVisible('ETF',false);
 $('hideAllStockButton').onclick=()=>setTypeVisible('Stock',false);
 if($('hideAllFundButton'))$('hideAllFundButton').onclick=()=>setTypeVisible('Fund',false);
+
 

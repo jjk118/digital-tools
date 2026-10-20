@@ -6,7 +6,8 @@ const fundPct=n=>fundValid(n)?(n>=0?'+':'')+n.toFixed(2)+'%':'—';
 const fundClass=n=>fundValid(n)&&n>0?'pos':fundValid(n)&&n<0?'neg':'';
 const fundTime=t=>t&&!Number.isNaN(Date.parse(t))?new Intl.DateTimeFormat('en-SG',{timeZone:'Asia/Singapore',dateStyle:'medium',timeStyle:'short'}).format(new Date(t))+' SGT':'Not yet retrieved';
 const fundSort={key:null,dir:'asc'};
-let fundRows=[],fundRunning=false;
+let fundRows=[],allFundRows=[],fundRunning=false;
+const fundHidden=new Set();
 
 async function fetchFundsJson(path){
  const url=new URL(path,location.href);
@@ -81,8 +82,20 @@ function exportFunds(){
 }
 async function refreshFunds(){
  if(fundRunning)return;fundRunning=true;
- try{const loaded=await loadFundsData();fundRows=loaded.rows;renderFundRows();fund$('reference-time').textContent=fundTime(loaded.market.last_check_completed_at||loaded.market.generated_at);fund$('tracked')?.replaceChildren();fund$('status').textContent='Latest fund data loaded. Last refresh & check completed: '+fund$('reference-time').textContent+'.';}
+ try{const loaded=await loadFundsData();allFundRows=loaded.rows;await StockMonitorDisplay.initialise({...loaded.config,instruments:loaded.config.instruments.filter(row=>row.type==='Fund')},fundHidden,renderFundVisibility);renderFundVisibility();fund$('reference-time').textContent=fundTime(loaded.market.last_check_completed_at||loaded.market.generated_at);fund$('tracked')?.replaceChildren();fund$('status').textContent='Latest fund data loaded. Last refresh & check completed: '+fund$('reference-time').textContent+'.';}
  catch(error){fund$('status').textContent=error.message;}
  finally{fundRunning=false;}
 }
 buildFundHeader();fund$('exportExcelButton')?.addEventListener('click',exportFunds);refreshFunds();
+
+
+function renderFundVisibility(){
+ fundRows=allFundRows.filter(row=>!fundHidden.has(row.ticker));StockMonitorDisplay.updateVisibility(fundRows.length);fund$('fundSection').hidden=fundRows.length===0;renderFundRows();
+ const list=fund$('settingsList');if(!list)return;list.replaceChildren();
+ for(const row of allFundRows){const label=document.createElement('label'),input=document.createElement('input'),text=document.createElement('span'),title=document.createElement('strong'),meta=document.createElement('span');label.className='settings-option';input.type='checkbox';input.checked=!fundHidden.has(row.ticker);title.textContent=row.ticker+' · Fund';meta.textContent=row.name;input.onchange=()=>{if(input.checked)fundHidden.delete(row.ticker);else fundHidden.add(row.ticker);renderFundVisibility();};text.append(title,meta);label.append(input,text);list.append(label);}
+}
+fund$('settingsLink').onclick=event=>{event.preventDefault();fund$('settingsPanel').classList.toggle('open');fund$('settingsPanel').scrollIntoView({behavior:'smooth',block:'start'});};
+fund$('settingsCloseButton').onclick=()=>fund$('settingsPanel').classList.remove('open');
+fund$('showAllTickersButton').onclick=()=>{fundHidden.clear();renderFundVisibility();};
+fund$('hideAllFundButton').onclick=()=>{for(const row of allFundRows)fundHidden.add(row.ticker);renderFundVisibility();};
+if(location.hash==='#settingsPanel')fund$('settingsPanel').classList.add('open');

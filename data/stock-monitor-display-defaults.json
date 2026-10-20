@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "pages": {
+    "index.html": {
+      "visibleTickers": []
+    },
+    "index-syc.html": {
+      "visibleTickers": []
+    },
+    "kwc.html": {
+      "visibleTickers": []
+    },
+    "tools/index-syc.html": {
+      "visibleTickers": []
+    },
+    "tools/kwc.html": {
+      "visibleTickers": []
+    },
+    "tools/syc.html": {
+      "visibleTickers": []
+    },
+    "tools/klz.html": {
+      "visibleTickers": []
+    },
+    "index-funds.html": {
+      "visibleTickers": []
+    }
+  }
+}

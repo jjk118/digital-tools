@@ -1,0 +1,27 @@
+name: Monitor display defaults tests
+on:
+  push:
+    paths:
+      - stock-monitor/**
+      - data/stock-monitor-display-defaults.json
+      - tests/test_display_defaults.cjs
+      - tests/test_monitor_display_integration.cjs
+      - .github/workflows/display-defaults-tests.yml
+  pull_request:
+    paths:
+      - stock-monitor/**
+      - data/stock-monitor-display-defaults.json
+      - tests/test_display_defaults.cjs
+      - tests/test_monitor_display_integration.cjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  display-defaults:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/test_display_defaults.cjs tests/test_monitor_display_integration.cjs
