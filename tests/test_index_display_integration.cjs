@@ -20,19 +20,12 @@ const defaults={version:1,pages:{'index.html':{visibleTickers:[]}}};
 function loadPage(key){const doc=parse(read('stock-monitor/'+key));doc.createElement=tag=>new Element(tag);doc.getElementById=id=>doc.querySelector('#'+id);doc.currentScript={src:'https://myai118.github.io/digital-tools/stock-monitor/display-defaults.js'};
  const ctx={document:doc,location:{href:'https://myai118.github.io/digital-tools/stock-monitor/'+key,pathname:'/digital-tools/stock-monitor/'+key,hash:''},URL,TextEncoder,TextDecoder,Uint8Array,atob,btoa,console,Blob,AbortController,setInterval(){return 1;},clearInterval(){},setTimeout(){},clearTimeout(){},addEventListener(){},navigator:{userAgent:'test',maxTouchPoints:0},localStorage:{getItem(){throw Error('Must ignore old visitor preferences');},setItem(){throw Error('Must not persist visitor preferences');}},async fetch(url){let p=String(url),data;if(p.includes('stock-monitor-display-defaults.json'))data=defaults;else if(p.includes('stock-tickers.json'))data=JSON.parse(read('data/stock-tickers.json'));else if(p.includes('dividend-data.json'))data=JSON.parse(read('dividend-data.json'));else if(p.includes('market-data.json'))data=JSON.parse(read('market-data.json'));else throw Error('Unexpected request '+p);return {ok:true,json:async()=>structuredClone(data)};}};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(read('stock-monitor/display-defaults.js'),ctx);const script=key==='index-funds.html'?'stock-monitor/funds-monitor.js':key.startsWith('tools/')?'stock-monitor/tools/monitor.js':'stock-monitor/monitor-index-defaults.js';vm.runInContext(read(script),ctx);return {ctx,doc};}
 async function ready(doc){for(let i=0;i<20;i++){if(doc.getElementById('status').textContent.includes('Latest'))return;await new Promise(resolve=>setImmediate(resolve));}assert.fail(doc.getElementById('status').textContent);}
-test('main index has no visitor controls and displays only owner configured tickers across refreshes and visits',async()=>{
+test('main index monitor loads empty, allow temporary selections and reset on a new visit',async()=>{
  for(const key of Object.keys(defaults.pages)){
-  const {ctx,doc}=loadPage(key);await ready(doc);assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0,key+' must start empty');
-  for(const id of ['displayEmptyState','settingsPanel','settingsButton','settingsLink'])assert.equal(doc.getElementById(id),null,id+' must be absent');
-  await ctx.refresh();assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0);
-  doc.getElementById('exportExcelButton').click();assert.match(doc.getElementById('status').textContent,/No tickers have been configured/);
-  const instruments=JSON.parse(read('data/stock-tickers.json')).instruments;
-  const selected=['ETF','Stock','Fund'].map(type=>instruments.find(x=>x.enabled&&x.type===type).ticker);
-  defaults.pages[key].visibleTickers=selected;
-  const next=loadPage(key);await ready(next.doc);assert.deepEqual(next.doc.querySelectorAll('tr[data-ticker]').map(x=>x.dataset.ticker).sort(),selected.slice().sort());
-  await next.ctx.refresh();assert.equal(next.doc.querySelectorAll('tr[data-ticker]').length,3);
-  const revisit=loadPage(key);await ready(revisit.doc);assert.equal(revisit.doc.querySelectorAll('tr[data-ticker]').length,3);
-  defaults.pages[key].visibleTickers=[];
+  const {ctx,doc}=loadPage(key);await ready(doc);assert.equal(doc.querySelectorAll('tr[data-ticker]').length,0,key+' must start empty');assert.equal(doc.getElementById('displayEmptyState'),null,key+' must not show a Settings prompt');
+  doc.getElementById('settingsLink').click();assert.ok(doc.getElementById('settingsPanel').classList.contains('open'),key+' must open Settings from the empty page');
+  const check=doc.getElementById('settingsList').querySelector('input');assert.ok(check,key+' must list selectable tickers');check.checked=true;check.onchange();assert.equal(doc.querySelectorAll('tr[data-ticker]').length,1,key+' must show selected ticker');assert.equal(doc.getElementById('displayEmptyState'),null);
+  await (key==='index-funds.html'?ctx.refreshFunds():ctx.refresh());assert.equal(doc.querySelectorAll('tr[data-ticker]').length,1,key+' retains selection on data update');
+  const next=loadPage(key);await ready(next.doc);assert.equal(next.doc.querySelectorAll('tr[data-ticker]').length,0,key+' resets next visit');
  }
 });
-
