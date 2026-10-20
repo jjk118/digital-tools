@@ -2,8 +2,12 @@
   "version": 1,
   "pages": {
     "index.html": {
-      "visibleTickers": [],
-      "settingsPassword": "index"
+      "visibleTickers": [
+        "0P00015GRZ.SI",
+        "SHEL"
+      ],
+      "settingsPassword": "index",
+      "savedAt": "2026-10-20T06:53:21.058Z"
     },
     "tools/kwc.html": {
       "visibleTickers": [],
