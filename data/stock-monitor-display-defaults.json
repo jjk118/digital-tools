@@ -29,10 +29,25 @@
         "0P0000TZQ7.SI",
         "0P0000Y077.SI",
         "0P0000Z32L.SI",
-        "0P0001I7S9.SI"
+        "0P0001I7S9.SI",
+        "1155.KL",
+        "AAPL",
+        "AMZN",
+        "BN4.SI",
+        "D05.SI",
+        "GOOGL",
+        "META",
+        "MSFT",
+        "NDAQ",
+        "NVDA",
+        "O39.SI",
+        "SHEL",
+        "TSLA",
+        "U11.SI",
+        "Z74.SI"
       ],
       "settingsPassword": "kwc",
-      "savedAt": "2026-10-20T07:23:05.218Z"
+      "savedAt": "2026-10-20T07:24:46.756Z"
     },
     "tools/syc.html": {
       "visibleTickers": [],
