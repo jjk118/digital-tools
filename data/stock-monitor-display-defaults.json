@@ -2,7 +2,8 @@
   "version": 1,
   "pages": {
     "index.html": {
-      "visibleTickers": []
+      "visibleTickers": [],
+      "settingsPassword": "index"
     }
   }
 }
