@@ -1,30 +1,22 @@
 'use strict';
-// Owner defaults are shared in GitHub. Visitor changes live only in this page's memory.
+// Owner defaults are managed in Admin. Visitor changes live only in this page's memory.
 window.StockMonitorDisplay = (() => {
  const scriptURL = new URL(document.currentScript.src);
  const root = new URL('../', scriptURL);
  const configPath = 'data/stock-monitor-display-defaults.json';
  const configURL = new URL(configPath, root);
- const api = 'https://api.github.com/repos/myai118/digital-tools';
  const relative = location.pathname.slice(root.pathname.length);
  const pageKey = relative.replace(/^stock-monitor\//, '') || 'index.html';
  const key = pageKey.endsWith('/') ? pageKey + 'index.html' : pageKey;
  let loading = null, loaded = false, entry = null, known = new Set();
- let hidden, config, redraw, credential = '', mounted = false, saving = false;
+ let hidden, config, redraw, mounted = false;
  function updateVisibility() { /* Use the bottom-left settings dot; no public prompt. */ }
  const copy = value => value == null ? null : JSON.parse(JSON.stringify(value));
- const clean = value => [...new Set(value.map(x => String(x).trim().toUpperCase()))].sort();
  const decode = value => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(value.replace(/\s/g, '')), c => c.charCodeAt(0))));
- const encode = value => { let binary = ''; for (const byte of new TextEncoder().encode(JSON.stringify(value, null, 2) + '\n')) binary += String.fromCharCode(byte); return btoa(binary); };
  function validateDocument(data) {
   if (!data || data.version !== 1 || !data.pages || typeof data.pages !== 'object' || Array.isArray(data.pages)) throw Error('Invalid default display settings.');
   for (const item of Object.values(data.pages)) if (!item || !Array.isArray(item.visibleTickers) || item.visibleTickers.some(t => typeof t !== 'string')) throw Error('Invalid default ticker list.');
   return data;
- }
- async function request(path, options = {}) {
-  const response = await fetch(api + path, {...options, cache:'no-store', headers:{Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28', ...(credential ? {Authorization:'Bearer ' + credential} : {}), ...(options.headers || {})}});
-  if (!response.ok) throw Error('GitHub returned ' + response.status + '. Check repository access and Contents read/write permission.');
-  return response.json();
  }
  function active() { return (config.instruments || []).filter(x => x.enabled); }
  function applyDefaults() {
@@ -37,42 +29,10 @@ window.StockMonitorDisplay = (() => {
   const panel = document.getElementById('settingsPanel');
   if (mounted || !panel) return;
   mounted = true;
-  const box = document.createElement('details'); box.className = 'owner-defaults'; box.open = true;
-  box.innerHTML = '<summary>Save default ticker list for this page</summary><p>Select the tickers to show above, connect GitHub, then save them here. The saved list loads for every visitor after publication completes.</p><p><label>GitHub token <input type="password" autocomplete="off" spellcheck="false" aria-label="Default settings GitHub token"></label></p><div class="settings-actions"><button type="button" data-action="connect">Connect GitHub</button><button type="button" data-action="disconnect">Disconnect</button><button type="button" data-action="save" disabled>Save current selection as defaults</button></div><p id="ownerDefaultsStatus" role="status">Not connected. Use a token restricted to myai118/digital-tools with Contents read/write permission. The token stays only in this tab until disconnect or reload. Never share it in chat.</p>';
-  if (box.style) box.style.flexBasis = '100%';
-  const settingsHead = panel.querySelector('.settings-head');
-  if (settingsHead) settingsHead.append(box); else panel.append(box);
-  const input = box.querySelector('input'), save = box.querySelector('[data-action="save"]'), connect = box.querySelector('[data-action="connect"]');
-  connect.onclick = async () => {
-   const token = input.value.trim(); input.value = '';
-   if (!token) { status('Enter your GitHub token directly here.'); return; }
-   credential = token; connect.disabled = true;
-   try { await request(''); save.disabled = false; status('Connected. Save defaults updates this page for everyone.'); }
-   catch (error) { credential = ''; save.disabled = true; status(error.message); }
-   finally { connect.disabled = false; }
-  };
-  box.querySelector('[data-action="disconnect"]').onclick = () => { credential = ''; input.value = ''; save.disabled = true; status('Disconnected. Token cleared.'); };
-  save.onclick = async () => {
-   if (saving || !credential) return;
-   saving = true; save.disabled = true; status('Saving defaults for ' + key + '…');
-   // Capture the selection now, before waiting on the network.
-   const visibleTickers = clean(active().filter(x => !hidden.has(x.ticker)).map(x => x.ticker));
-   try {
-    const current = await request('/contents/' + configPath + '?ref=main&ts=' + Date.now());
-    const data = validateDocument(decode(current.content));
-    if (JSON.stringify(data.pages[key] || null) !== JSON.stringify(entry)) throw Error('This page\'s defaults changed elsewhere. Reload before saving.');
-    const next = {...data.pages[key], visibleTickers, savedAt:new Date().toISOString()};
-    data.pages[key] = next;
-    const result = await request('/contents/' + configPath, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:'Set default tickers for stock-monitor/' + key, branch:'main', sha:current.sha, content:encode(data)})});
-    if (!result.commit || !result.commit.sha) throw Error('GitHub did not confirm the save.');
-    entry = copy(next);
-    status('Saved ' + visibleTickers.length + ' default tickers for this page. New visits will use them after publication finishes, usually within a few minutes.');
-   } catch (error) { status('Defaults were not saved. ' + error.message); }
-   finally { saving = false; save.disabled = !credential; }
-  };
   const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Reset to owner defaults';
   reset.onclick = () => { applyDefaults(); redraw(); };
-  panel.querySelector('.settings-actions').append(reset);
+  const actions = panel.querySelector('.settings-actions');
+  if (actions) actions.append(reset);
  }
  async function initialise(cfg, hiddenSet, rerender) {
   config = cfg; hidden = hiddenSet; redraw = rerender;

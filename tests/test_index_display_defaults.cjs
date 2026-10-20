@@ -50,13 +50,7 @@ test('unavailable or unconfigured defaults block rendering rather than show all'
  await assert.rejects(harness('index.html',{}, {fail:true}).api.initialise(cfg,new Set(),()=>{}),/unavailable/);
  await assert.rejects(harness('index.html',{}).api.initialise(cfg,new Set(),()=>{}),/No default ticker list/);
 });
-test('owner save captures the checked tickers, keeps other pages and sends credentials only to GitHub',async()=>{
- let written;const h=harness('index.html',{'index.html':{visibleTickers:[],settingsPassword:'owner-secret'},'tools/kwc.html':{visibleTickers:['SPY']}},{onPut(body){written=body;}}),hidden=new Set();await h.api.initialise(cfg,hidden,()=>{});
- h.nodes.input.value='test-token';await h.nodes.connect.onclick();assert.equal(h.nodes.input.value,'');hidden.delete('D05.SI');await h.nodes.save.onclick();
- const saved=JSON.parse(Buffer.from(written.content,'base64').toString('utf8'));assert.deepEqual(saved.pages['index.html'].visibleTickers,['D05.SI']);assert.deepEqual(saved.pages['tools/kwc.html'].visibleTickers,['SPY']);assert.equal(written.sha,'latest-blob');assert.equal(saved.pages['index.html'].settingsPassword,'owner-secret');
- assert.equal(h.calls[0].opts.headers,undefined);assert.equal(h.calls.find(x=>x.opts.method==='PUT').opts.headers.Authorization,'Bearer test-token');assert.match(h.status.textContent,/Saved 1 default tickers/);
+test('stock monitor settings do not ask for GitHub credentials',()=>{
+ assert.doesNotMatch(code,/GitHub token|Connect GitHub|Save current selection as defaults/);
+ assert.match(code,/Reset to owner defaults/);
 });
-test('owner cannot overwrite newer defaults on the same page',async()=>{
- let put=false;const h=harness('index.html',{'index.html':{visibleTickers:[]}},{onPut(){put=true;}});await h.api.initialise(cfg,new Set(),()=>{});h.nodes.input.value='test-token';await h.nodes.connect.onclick();h.apiDoc.pages['index.html']={visibleTickers:['SPY']};await h.nodes.save.onclick();assert.equal(put,false);assert.match(h.status.textContent,/changed elsewhere/);
-});
-

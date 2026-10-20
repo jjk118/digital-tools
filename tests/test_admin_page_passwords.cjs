@@ -11,13 +11,23 @@ test('password saving needs GitHub connection and preserves ticker defaults and 
  const h=client();await assert.rejects(h.api.savePagePassword('index.html','new','index'),/Connect GitHub/);assert.equal(h.calls.length,0);
  await h.connect();h.data.pages['index.html'].visibleTickers.push('MSFT');const result=await h.api.savePagePassword('index.html','新 password','index');assert.equal(result.commit_sha,'saved');
  const put=h.calls.find(x=>x.opts.method==='PUT'),body=JSON.parse(put.opts.body),saved=JSON.parse(Buffer.from(body.content,'base64').toString('utf8'));
- assert.equal(body.sha,'latest-sha');assert.equal(saved.pages['index.html'].settingsPassword,'新 password');assert.deepEqual(saved.pages['index.html'].visibleTickers,['SPY','MSFT']);assert.equal(saved.pages['index.html'].savedAt,'unchanged');assert.deepEqual(saved.pages['tools/kwc.html'],defaults().pages['tools/kwc.html']);assert.equal(put.opts.headers.Authorization,'Bearer test-token');
+ assert.equal(body.sha,'latest-sha');assert.equal(saved.pages['index.html'].settingsPassword,'新 password');assert.deepEqual(saved.pages['index.html'].visibleTickers,['SPY','MSFT']);assert.equal(typeof saved.pages['index.html'].savedAt,'string');assert.deepEqual(saved.pages['tools/kwc.html'],defaults().pages['tools/kwc.html']);assert.equal(put.opts.headers.Authorization,'Bearer test-token');
 });
 test('password saves reject changed passwords, empty passwords and unknown pages without writing',async()=>{
  const h=client();await h.connect();await assert.rejects(h.api.savePagePassword('index.html','new','stale'),/changed elsewhere/);await assert.rejects(h.api.savePagePassword('index.html','   ','index'),/Enter a new/);await assert.rejects(h.api.savePagePassword('unknown.html','new',undefined),/not configured/);assert.equal(h.calls.filter(x=>x.opts.method==='PUT').length,0);
 });
 test('conflicts and unconfirmed GitHub responses cannot report a successful password save',async()=>{
  for(const options of [{conflict:true},{unconfirmed:true}]){const h=client(options);await h.connect();await assert.rejects(h.api.savePagePassword('index.html','new','index'),/Conflict|did not confirm/);}
+});
+test('default ticker saving uses the existing Admin GitHub connection and preserves page passwords',async()=>{
+ const h=client();await assert.rejects(h.api.savePageDefaults('index.html',['MSFT','SPY'],['SPY']),/Connect GitHub/);assert.equal(h.calls.length,0);
+ await h.connect();const result=await h.api.savePageDefaults('index.html',['MSFT','SPY'],['SPY']);assert.equal(result.commit_sha,'saved');
+ const put=h.calls.find(x=>x.opts.method==='PUT'),body=JSON.parse(put.opts.body),saved=JSON.parse(Buffer.from(body.content,'base64').toString('utf8'));
+ assert.deepEqual(saved.pages['index.html'].visibleTickers,['MSFT','SPY']);assert.equal(saved.pages['index.html'].settingsPassword,'index');assert.equal(typeof saved.pages['index.html'].savedAt,'string');assert.deepEqual(saved.pages['tools/kwc.html'],defaults().pages['tools/kwc.html']);assert.equal(body.sha,'latest-sha');assert.equal(put.opts.headers.Authorization,'Bearer test-token');
+});
+test('default ticker saves reject stale page lists and unconfirmed writes',async()=>{
+ const stale=client();await stale.connect();stale.data.pages['index.html'].visibleTickers=['AAPL'];await assert.rejects(stale.api.savePageDefaults('index.html',['MSFT'],['SPY']),/changed elsewhere/);assert.equal(stale.calls.filter(x=>x.opts.method==='PUT').length,0);
+ const unconfirmed=client({unconfirmed:true});await unconfirmed.connect();await assert.rejects(unconfirmed.api.savePageDefaults('index.html',['MSFT'],['SPY']),/did not confirm/);
 });
 class Node{constructor(){this.value='';this.children=[];this.disabled=false;this.textContent='';}append(n){this.children.push(n);if(!this.value)this.value=n.value;}replaceChildren(){this.children=[];this.value='';}get options(){return this.children;}}
 async function panel(options={}){

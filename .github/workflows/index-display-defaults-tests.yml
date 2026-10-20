@@ -5,7 +5,9 @@ on:
       - market-watch-admin.html
       - stock-monitor/github-client.js
       - stock-monitor/admin-page-passwords.js
+      - stock-monitor/admin-display-defaults.js
       - tests/test_admin_page_passwords.cjs
+      - tests/test_admin_display_defaults.cjs
       - stock-monitor/index.html
       - stock-monitor/tools/kwc.html
       - stock-monitor/tools/syc.html
@@ -29,5 +31,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/test_index_display_defaults.cjs tests/test_index_display_integration.cjs tests/test_admin_page_passwords.cjs
+      - run: node --test tests/test_index_display_defaults.cjs tests/test_index_display_integration.cjs tests/test_admin_page_passwords.cjs tests/test_admin_display_defaults.cjs
 
