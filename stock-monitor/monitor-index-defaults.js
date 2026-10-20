@@ -1,34 +1,10 @@
 'use strict';
 const $=id=>document.getElementById(id), valid=n=>typeof n==='number'&&Number.isFinite(n), fmt=n=>valid(n)?n.toFixed(2):'—', pct=n=>valid(n)?(n>=0?'+':'')+n.toFixed(2)+'%':'—', cls=n=>valid(n)&&n>0?'pos':valid(n)&&n<0?'neg':'';
 const sg=t=>t&&!Number.isNaN(Date.parse(t))?new Intl.DateTimeFormat('en-SG',{timeZone:'Asia/Singapore',dateStyle:'medium',timeStyle:'short'}).format(new Date(t))+' SGT':'Not yet retrieved';
-let interval, running=false, exportRows=[], latestCfg=null, latestData=null, hiddenTickers=loadHiddenTickers();
+let interval, running=false, exportRows=[], latestCfg=null, latestData=null, hiddenTickers=new Set();
 const IDS={ETF:['etfRows','etfSection'],Stock:['stockRows','stockSection'],Fund:['fundRows','fundSection']};
 const tableSort={ETF:{key:null,dir:'asc'},Stock:{key:null,dir:'asc'},Fund:{key:null,dir:'asc'}};
-function loadHiddenTickers(){return new Set();}
-function saveHiddenTickers(){/* Visitor choices last only until the next page load. */}
 function rerender(){if(latestCfg&&latestData)render(latestCfg,latestData);}
-function setTickerVisible(ticker,visible){if(visible)hiddenTickers.delete(ticker);else hiddenTickers.add(ticker);saveHiddenTickers();rerender();}
-function setTypeVisible(type,visible){
- if(!latestCfg)return;
- for(const x of latestCfg.instruments.filter(x=>x.enabled&&x.type===type)){if(visible)hiddenTickers.delete(x.ticker);else hiddenTickers.add(x.ticker);}
- saveHiddenTickers();rerender();
-}
-function toggleSettings(open){
- const panel=$('settingsPanel'),button=$('settingsButton'),next=open??!panel.classList.contains('open');
- panel.classList.toggle('open',next);button.setAttribute('aria-expanded',String(next));
- if(next)panel.scrollIntoView({behavior:'smooth',block:'start'});
-}
-function renderSettings(allActive){
- const list=$('settingsList');
- if(!list)return;
- list.replaceChildren();
- for(const x of allActive){
-  const label=document.createElement('label'),input=document.createElement('input'),text=document.createElement('span'),title=document.createElement('strong'),meta=document.createElement('span');
-  label.className='settings-option';input.type='checkbox';input.checked=!hiddenTickers.has(x.ticker);input.onchange=()=>setTickerVisible(x.ticker,input.checked);
-  title.textContent=x.ticker+' · '+x.type;meta.textContent=[x.name,x.region].filter(Boolean).join(' · ');text.append(title,meta);label.append(input,text);list.append(label);
- }
- if(!allActive.length){const empty=document.createElement('p');empty.textContent='No enabled tickers found.';list.append(empty);}
-}
 function sortTable(type){
  if(type==='Fund'&&!$('fundSection'))return;
  const tbody=tableBody(...(IDS[type]||IDS.Stock)),state=tableSort[type];
@@ -75,7 +51,7 @@ function showExportPanel(name,html,tableHtml){
  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function exportExcel(){
- if(!exportRows.length){$('status').textContent=latestCfg?'No tickers are currently selected for display. Open Settings and show at least one ticker before exporting.':'No monitor data loaded yet. Please wait for the page to finish loading.';return;}
+ if(!exportRows.length){$('status').textContent=latestCfg?'No tickers have been configured for this page.':'No monitor data loaded yet. Please wait for the page to finish loading.';return;}
  if(!window.XlsxWriter){$('status').textContent='Excel export is unavailable because xlsx-writer.js did not load. Reload the page and try again.';return;}
  const columns=[['#',6],['Category',10],['Ticker',15],['Name',44],['Region / Market',16],['Currency',10],['Previous Close',14],['Previous Day % Change',15],['Current Price',13],['Current % Change',13],['All-Time High',14],['Drawdown %',12],['Market Time',26],['Retrieved Time',26],['Refresh Status',16],['Dividend / Share',16],['Dividend Yield %',16],['Ex-Dividend Date',20]];
  const text=v=>({value:String(v??''),style:'text'}),num=v=>valid(v)?{value:v,style:'num'}:{style:'num'};
@@ -94,9 +70,7 @@ function render(cfg,data){
  latestCfg=cfg;latestData=data;
  const prices=new Map((data.instruments||[]).map(x=>[x.ticker,x]));
  const allActive=cfg.instruments.filter(x=>x.enabled).sort((a,b)=>({ETF:0,Stock:1,Fund:2}[a.type]??3)-({ETF:0,Stock:1,Fund:2}[b.type]??3)||a.ticker.localeCompare(b.ticker));
- renderSettings(allActive);
  const active=allActive.filter(x=>!hiddenTickers.has(x.ticker));
- StockMonitorDisplay.updateVisibility(active.length);
  exportRows=active.map(x=>({...x,...(prices.get(x.ticker)||{})}));
  const etfBody=tableBody('etfRows','etfSection'),stockBody=tableBody('stockRows','stockSection');
  etfBody.replaceChildren();stockBody.replaceChildren();const fundBody=$('fundSection')?tableBody('fundRows','fundSection'):null;if(fundBody)fundBody.replaceChildren();let successful=[];
@@ -131,13 +105,5 @@ $('jumpETF').onclick=()=>($('etfSection').style.display==='none'?$('stockSection
 const TAB_SECTIONS={jumpFund:'fundSection',jumpETF:'etfSection',jumpStock:'stockSection'};
 function setActiveTab(id){for(const t of Object.keys(TAB_SECTIONS)){const b=$(t);if(b)b.classList.toggle('secondary',t!==id);}}
 for(const t of Object.keys(TAB_SECTIONS)){const b=$(t);if(b)b.addEventListener('click',()=>{const s=$(TAB_SECTIONS[t]);if(t==='jumpFund'&&(!s||s.style.display==='none'))return;setActiveTab(t);});}
-if($('jumpFund'))$('jumpFund').onclick=()=>{const section=$('fundSection');if(!section||section.style.display==='none'){$('status').textContent='No funds are currently shown. Add a fund in Admin, or turn it on in Settings.';return;}section.scrollIntoView({behavior:'smooth'});};window.addEventListener('focus',()=>refresh(false));refresh(false);
+if($('jumpFund'))$('jumpFund').onclick=()=>{const section=$('fundSection');if(!section||section.style.display==='none'){$('status').textContent='No funds have been configured for this page.';return;}section.scrollIntoView({behavior:'smooth'});};window.addEventListener('focus',()=>refresh(false));refresh(false);
 $('exportExcelButton').onclick=exportExcel;
-$('settingsButton').onclick=()=>toggleSettings(); if($('settingsLink'))$('settingsLink').onclick=e=>{e.preventDefault();toggleSettings();}; if(location.hash==='#settingsPanel')toggleSettings(true);
-$('settingsCloseButton').onclick=()=>toggleSettings(false);
-$('showAllTickersButton').onclick=()=>{hiddenTickers.clear();saveHiddenTickers();rerender();};
-$('hideAllEtfButton').onclick=()=>setTypeVisible('ETF',false);
-$('hideAllStockButton').onclick=()=>setTypeVisible('Stock',false);
-if($('hideAllFundButton'))$('hideAllFundButton').onclick=()=>setTypeVisible('Fund',false);
-
-
