@@ -6,7 +6,6 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCK = threading.RLock()
 UA = {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json,text/html'}
 CATALOG = {}
-MAX_TICKERS = 400
 DEFAULT_PRICE_CHECKER = {
     'enabled': True,
     'intervalMinutes': 8,
@@ -16,7 +15,6 @@ DEFAULT_PRICE_CHECKER = {
 }
 PRICE_CHECKER_INTERVALS = (5, 6, 8, 9, 10)
 PRICE_CHECKER_CYCLE_MIN = 1
-PRICE_CHECKER_CYCLE_MAX = 30
 PRICE_CHECKER_TYPES = ('ETF', 'Stock', 'Fund')
 for directory_file in (ROOT/'data/symbol-directory').glob('*.json'):
     CATALOG.update(json.loads(directory_file.read_text(encoding='utf-8')))
@@ -79,7 +77,7 @@ def lookup(ticker):
 def validate(data):
     if not isinstance(data,dict) or data.get('version',1)!=1: raise ValueError('Unsupported configuration.')
     entries=data.get('tickers',data.get('instruments'))
-    if not isinstance(entries,list) or len(entries)>MAX_TICKERS: raise ValueError('Expected at most '+str(MAX_TICKERS)+' tickers.')
+    if not isinstance(entries,list): raise ValueError('Expected a ticker list.')
     interval=data.get('refreshIntervalMinutes',15)
     if type(interval)!=int or interval not in (5,10,15,30,60): raise ValueError('Invalid refresh interval.')
     raw_checker=data.get('priceChecker',{})
@@ -95,10 +93,10 @@ def validate(data):
     if type(checker['enabled'])!=bool: raise ValueError('Price checker enabled setting must be true or false.')
     if type(checker['intervalMinutes'])!=int or checker['intervalMinutes'] not in PRICE_CHECKER_INTERVALS:
         raise ValueError('Price checker interval must be 5, 6, 8, 9 or 10 minutes.')
-    if type(checker['cycles'])!=int or not PRICE_CHECKER_CYCLE_MIN <= checker['cycles'] <= PRICE_CHECKER_CYCLE_MAX:
-        raise ValueError('Price checker cycles must be between 1 and 30.')
-    if type(checker['maxActiveCheckers'])!=int or not 1 <= checker['maxActiveCheckers'] <= 10:
-        raise ValueError('Max active checker jobs must be between 1 and 10.')
+    if type(checker['cycles'])!=int or checker['cycles'] < PRICE_CHECKER_CYCLE_MIN:
+        raise ValueError('Price checker cycles must be a positive whole number.')
+    if type(checker['maxActiveCheckers'])!=int or checker['maxActiveCheckers'] < 1:
+        raise ValueError('Max active checker jobs must be a positive whole number.')
     if not isinstance(checker['categories'],dict): raise ValueError('Invalid price checker category settings.')
     checker['categories']={k: checker['categories'].get(k, True) for k in PRICE_CHECKER_TYPES}
     if any(type(v)!=bool for v in checker['categories'].values()):
