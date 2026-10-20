@@ -35,19 +35,26 @@
         "AMZN",
         "BN4.SI",
         "D05.SI",
+        "ES3.SI",
         "GOOGL",
+        "GQC0.MU",
         "META",
         "MSFT",
         "NDAQ",
         "NVDA",
         "O39.SI",
+        "QQQ",
+        "QQQM",
         "SHEL",
+        "SPY",
         "TSLA",
         "U11.SI",
+        "VOO",
+        "VTI",
         "Z74.SI"
       ],
       "settingsPassword": "kwc",
-      "savedAt": "2026-10-20T07:24:46.756Z"
+      "savedAt": "2026-10-20T07:25:26.042Z"
     },
     "tools/syc.html": {
       "visibleTickers": [],
