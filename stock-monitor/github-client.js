@@ -70,5 +70,17 @@ window.ECGitHub=(()=>{
   button.onclick=async()=>{const value=input.value.trim();input.value='';if(!value){status.textContent='Enter your restricted GitHub token.';return;}credential=value;button.disabled=true;try{await request('');status.textContent='Connected for this tab. Save writes the shared GitHub ticker configuration.';}catch(e){credential='';status.textContent=e.message;}finally{button.disabled=false;}};
   container.querySelector('.disconnect').onclick=()=>{credential='';input.value='';status.textContent='Disconnected. The token has been cleared from this tab.';};
  }
- return {file,raw,lookup,save,refreshPrices,getCheckerSnapshot,startChecker,mount,connected:()=>Boolean(credential)};
+ async function savePagePassword(page,password,previousPassword){
+  if(!credential)throw Error('Connect GitHub under Owner access before saving a password.');
+  if(typeof password!=='string'||!password.trim())throw Error('Enter a new password.');
+  const path='data/stock-monitor-display-defaults.json',latest=await file(path),data=latest.data;
+  if(data.version!==1||!data.pages||!Object.hasOwn(data.pages,page)||!Array.isArray(data.pages[page]?.visibleTickers))throw Error('This monitor page is not configured. Reload the password settings.');
+  if(data.pages[page].settingsPassword!==previousPassword)throw Error('This password changed elsewhere. Reload password settings before saving.');
+  data.pages[page]={...data.pages[page],settingsPassword:password};
+  const result=await request('/contents/'+path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Update monitor settings password for '+page,branch,sha:latest.sha,content:encode(JSON.stringify(data,null,2)+'\n')})});
+  if(!result?.commit?.sha)throw Error('GitHub did not confirm the password save. Reload password settings to check before retrying.');
+  return {data,commit_sha:result.commit.sha};
+ }
+ return {file,raw,lookup,save,savePagePassword,refreshPrices,getCheckerSnapshot,startChecker,mount,connected:()=>Boolean(credential)};
 })();
+

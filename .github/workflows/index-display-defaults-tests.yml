@@ -2,6 +2,10 @@ name: Index display defaults tests
 on:
   push:
     paths:
+      - market-watch-admin.html
+      - stock-monitor/github-client.js
+      - stock-monitor/admin-page-passwords.js
+      - tests/test_admin_page_passwords.cjs
       - stock-monitor/index.html
       - stock-monitor/monitor-index-defaults.js
       - stock-monitor/display-defaults.js
@@ -21,4 +25,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/test_index_display_defaults.cjs tests/test_index_display_integration.cjs
+      - run: node --test tests/test_index_display_defaults.cjs tests/test_index_display_integration.cjs tests/test_admin_page_passwords.cjs
+
