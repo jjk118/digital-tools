@@ -14,6 +14,15 @@ function setTypeVisible(type,visible){
  saveHiddenTickers();rerender();
 }
 let settingsPasswordPending=false;
+const settingsFailures=new Map();
+function settingsAttemptKey(){return 'stock-monitor:settings-failures:'+location.pathname.replace(/\/$/,'/index.html');}
+function settingsFailureCount(){
+ const key=settingsAttemptKey();let count=settingsFailures.get(key)||0;
+ try{const stored=Number(localStorage.getItem(key));if(Number.isInteger(stored)&&stored>count)count=stored;}catch{}
+ return count;
+}
+function setSettingsFailures(count){const key=settingsAttemptKey();settingsFailures.set(key,count);try{localStorage.setItem(key,String(count));}catch{}}
+function settingsLocked(){const locked=settingsFailureCount()>=2;if(locked)$('status').textContent='Settings locked after two incorrect password attempts.';return locked;}
 function requestSettingsPassword(){
  return new Promise(resolve=>{
   const box=document.createElement('dialog');box.id='settingsPasswordDialog';box.setAttribute('aria-label','Settings password');
@@ -22,7 +31,7 @@ function requestSettingsPassword(){
   label.textContent='Enter the settings password';input.id='settingsPasswordInput';input.type='password';input.autocomplete='off';input.setAttribute('aria-label','Settings password');input.style.cssText='display:block;width:100%;margin:14px 0;padding:10px;font:inherit';
   message.id='settingsPasswordError';message.setAttribute('role','alert');actions.style.cssText='display:flex;gap:10px';ok.type='submit';ok.textContent='Open Settings';cancel.type='button';cancel.textContent='Cancel';
   const finish=accepted=>{input.value='';box.close();box.remove();resolve(accepted);};
-  form.onsubmit=e=>{e.preventDefault();const filename=decodeURIComponent(location.pathname.split('/').pop()||'index.html');if(input.value===filename.replace(/\.html?$/i,''))finish(true);else{message.textContent='Incorrect password.';input.value='';input.focus();}};
+  form.onsubmit=e=>{e.preventDefault();if(settingsLocked()){finish(false);return;}const filename=decodeURIComponent(location.pathname.split('/').pop()||'index.html');if(input.value===filename.replace(/\.html?$/i,'')){setSettingsFailures(0);finish(true);}else{setSettingsFailures(settingsFailureCount()+1);if(settingsLocked()){finish(false);return;}message.textContent='Incorrect password. One retry remaining.';input.value='';input.focus();}};
   cancel.onclick=()=>finish(false);box.oncancel=e=>{e.preventDefault();finish(false);};
   label.append(input);actions.append(ok,cancel);form.append(label,message,actions);box.append(form);document.body.append(box);box.showModal();input.focus();
  });
@@ -30,6 +39,7 @@ function requestSettingsPassword(){
 async function toggleSettings(open){
  const panel=$('settingsPanel'),button=$('settingsButton'),next=open??!panel.classList.contains('open');
  if(next){
+  if(settingsLocked())return;
   if(settingsPasswordPending)return;
   settingsPasswordPending=true;
   try{if(!await requestSettingsPassword())return;}finally{settingsPasswordPending=false;}
