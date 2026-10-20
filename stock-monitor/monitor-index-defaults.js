@@ -13,14 +13,26 @@ function setTypeVisible(type,visible){
  for(const x of latestCfg.instruments.filter(x=>x.enabled&&x.type===type)){if(visible)hiddenTickers.delete(x.ticker);else hiddenTickers.add(x.ticker);}
  saveHiddenTickers();rerender();
 }
-function toggleSettings(open){
+let settingsPasswordPending=false;
+function requestSettingsPassword(){
+ return new Promise(resolve=>{
+  const box=document.createElement('dialog');box.id='settingsPasswordDialog';box.setAttribute('aria-label','Settings password');
+  box.style.cssText='border:1px solid #bbd7ff;border-radius:10px;padding:24px;max-width:90vw;color:#080873';
+  const form=document.createElement('form'),label=document.createElement('label'),input=document.createElement('input'),message=document.createElement('p'),actions=document.createElement('div'),ok=document.createElement('button'),cancel=document.createElement('button');
+  label.textContent='Enter the settings password';input.id='settingsPasswordInput';input.type='password';input.autocomplete='off';input.setAttribute('aria-label','Settings password');input.style.cssText='display:block;width:100%;margin:14px 0;padding:10px;font:inherit';
+  message.id='settingsPasswordError';message.setAttribute('role','alert');actions.style.cssText='display:flex;gap:10px';ok.type='submit';ok.textContent='Open Settings';cancel.type='button';cancel.textContent='Cancel';
+  const finish=accepted=>{input.value='';box.close();box.remove();resolve(accepted);};
+  form.onsubmit=e=>{e.preventDefault();const filename=decodeURIComponent(location.pathname.split('/').pop()||'index.html');if(input.value===filename.replace(/\.html?$/i,''))finish(true);else{message.textContent='Incorrect password.';input.value='';input.focus();}};
+  cancel.onclick=()=>finish(false);box.oncancel=e=>{e.preventDefault();finish(false);};
+  label.append(input);actions.append(ok,cancel);form.append(label,message,actions);box.append(form);document.body.append(box);box.showModal();input.focus();
+ });
+}
+async function toggleSettings(open){
  const panel=$('settingsPanel'),button=$('settingsButton'),next=open??!panel.classList.contains('open');
  if(next){
-  const filename=decodeURIComponent(location.pathname.split('/').pop()||'index.html');
-  const expected=filename.replace(/\.html?$/i,'');
-  const entered=window.prompt('Enter the settings password:');
-  if(entered===null)return;
-  if(entered!==expected){window.alert('Incorrect password.');return;}
+  if(settingsPasswordPending)return;
+  settingsPasswordPending=true;
+  try{if(!await requestSettingsPassword())return;}finally{settingsPasswordPending=false;}
  }
  panel.classList.toggle('open',next);button.setAttribute('aria-expanded',String(next));
  if(next)panel.scrollIntoView({behavior:'smooth',block:'start'});
@@ -146,5 +158,6 @@ $('showAllTickersButton').onclick=()=>{hiddenTickers.clear();saveHiddenTickers()
 $('hideAllEtfButton').onclick=()=>setTypeVisible('ETF',false);
 $('hideAllStockButton').onclick=()=>setTypeVisible('Stock',false);
 if($('hideAllFundButton'))$('hideAllFundButton').onclick=()=>setTypeVisible('Fund',false);
+
 
 
