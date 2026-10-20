@@ -97,7 +97,7 @@ class ValidateConfigTests(unittest.TestCase):
         self.assertEqual(result["priceChecker"]["cycles"], 12)
         self.assertFalse(result["priceChecker"]["categories"]["Fund"])
 
-    def test_accepts_400_tickers(self):
+    def test_accepts_more_than_400_tickers_and_unbounded_checker_settings(self):
         entries = [
             {
                 "ticker": f"TEST{i:03d}",
@@ -107,20 +107,12 @@ class ValidateConfigTests(unittest.TestCase):
                 "type": "Stock",
                 "metadata_source": "Test fixture",
             }
-            for i in range(400)
+            for i in range(401)
         ]
-        result = market_service.validate({"version": 1, "instruments": entries})
-        self.assertEqual(len(result["instruments"]), 400)
-
-    def test_rejects_more_than_400_tickers(self):
-        with self.assertRaisesRegex(ValueError, "Expected at most 400 tickers"):
-            market_service.validate(
-                {
-                    "version": 1,
-                    "tickers": [{"ticker": f"AAPL{i}", "enabled": True} for i in range(401)],
-                }
-            )
-
+        result = market_service.validate({"version": 1, "instruments": entries, "priceChecker": {"cycles": 31, "maxActiveCheckers": 11}})
+        self.assertEqual(len(result["instruments"]), 401)
+        self.assertEqual(result["priceChecker"]["cycles"], 31)
+        self.assertEqual(result["priceChecker"]["maxActiveCheckers"], 11)
 
 class QuoteChartTests(unittest.TestCase):
     def test_rejects_chart_baseline_without_verified_daily_close(self):
