@@ -32,22 +32,24 @@
   storedHandle('get').then(saved=>{if(saved&&saved.name==='stock-monitor.xlsx')handle=saved;}).catch(()=>{}).finally(()=>{button.disabled=false;});
  }
  function workbook(){
-  // Union configuration and saved quotes; include disabled/hidden and quote-only instruments.
   const records=new Map();
   for(const row of latestCfg.instruments||[])records.set(row.ticker,{...row});
   for(const row of latestData.instruments||[])records.set(row.ticker,{...records.get(row.ticker),...row});
-  const metadata={};
-  for(const [prefix,source] of [['config',latestCfg],['data',latestData]]){
-   for(const [key,value] of Object.entries(source))if(key!=='instruments')metadata[prefix+'.'+key]=value;
-  }
-  const rows=[...records.values()].sort((a,b)=>String(a.type||'').localeCompare(String(b.type||''))||String(a.ticker||'').localeCompare(String(b.ticker||''))).map(row=>({...row,...metadata}));
-  if(!rows.length)throw Error('No instrument data is available to save.');
-  const keys=[...new Set(rows.flatMap(row=>Object.keys(row)))];
-  return window.XlsxWriter.build({sheetName:'All Stock Monitor Data',columns:keys.map(header=>({header,width:24})),rows:rows.map(row=>keys.map(key=>{
-   const value=row[key];
-   return typeof value==='number'&&Number.isFinite(value)?{value,style:'num'}:{value:value==null?'':typeof value==='object'?JSON.stringify(value):String(value),style:'text'};
-  }))});
+  const allRows=[...records.values()].sort((a,b)=>({ETF:0,Stock:1,Fund:2}[a.type]??3)-({ETF:0,Stock:1,Fund:2}[b.type]??3)||String(a.ticker||'').localeCompare(String(b.ticker||'')));
+  if(!allRows.length)throw Error('No instrument data is available to save.');
+ const columns=[['#',6],['Category',10],['Ticker',15],['Name',44],['Region / Market',16],['Currency',10],['Previous Close',14],['Previous Day % Change',15],['Current Price',13],['Current % Change',13],['All-Time High',14],['Drawdown %',12],['Market Time',26],['Retrieved Time',26],['Refresh Status',16],['Dividend / Share',16],['Dividend Yield %',16],['Ex-Dividend Date',20]];
+ const text=v=>({value:String(v??''),style:'text'}),num=v=>valid(v)?{value:v,style:'num'}:{style:'num'};
+ const rows=allRows.map((r,i)=>{
+  const n=i+2,prevDayBase=valid(r.prev_close)&&valid(r.prev_day_pct_change)?r.prev_close/(1+r.prev_day_pct_change/100):null;
+  const prevDay=valid(prevDayBase)&&prevDayBase!==0?{style:'pct',formula:'IFERROR(G'+n+'/'+prevDayBase+'-1,"")',value:r.prev_close/prevDayBase-1}:{style:'pct'};
+  const current=valid(r.current_price)&&valid(r.prev_close)&&r.prev_close!==0?{style:'pct',formula:'IFERROR(I'+n+'/G'+n+'-1,"")',value:r.current_price/r.prev_close-1}:{style:'pct'};
+  const drawdown=valid(r.current_price)&&valid(r.ath)&&r.ath!==0?{style:'pct',formula:'IFERROR(I'+n+'/K'+n+'-1,"")',value:r.current_price/r.ath-1}:{style:'pct'};
+  return [{value:i+1,style:'int'},text(r.type),text(r.ticker),text(r.name),text(r.region),text(r.currency),num(r.prev_close),prevDay,num(r.current_price),current,num(r.ath),drawdown,text(sg(r.price_as_of)),text(sg(r.price_retrieved_at)),text(r.refresh_error?'Refresh failed':'OK'),num(r.dividend_per_share),valid(r.dividend_yield_pct)?{value:r.dividend_yield_pct/100,style:'pct'}:{style:'pct'},text(r.ex_dividend_date||'')];
+ });
+ const blob=window.XlsxWriter.build({sheetName:'Stock Monitor',columns:columns.map(([header,width])=>({header,width})),rows});
+ return blob;
  }
+
  button.onclick=async()=>{
   if(!supported||busy)return;
   if(!latestCfg||!latestData||!window.XlsxWriter){status.textContent='Wait for Stock Monitor data and the Excel writer to load, then try again.';return;}
