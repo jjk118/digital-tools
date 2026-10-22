@@ -4,7 +4,7 @@
  const button=document.getElementById('desktopExcelSaveButton');
  if(!button)return;
  const status=document.getElementById('desktopExcelSaveStatus');
- let handle=null,busy=false;
+ let handle=null,busy=false,readyForPicker=false;
  const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/i.test(navigator.userAgent));
  const supported=!mobile&&window.isSecureContext&&typeof window.showSaveFilePicker==='function';
  if(!supported){button.disabled=true;status.textContent='Desktop Chrome/Edge with file access support and HTTPS required. Use Export Excel for a normal download.';}
@@ -51,10 +51,15 @@
  button.onclick=async()=>{
   if(!supported||busy)return;
   if(!latestCfg||!latestData||!window.XlsxWriter){status.textContent='Wait for Stock Monitor data and the Excel writer to load, then try again.';return;}
+  if(!handle&&!readyForPicker){
+   readyForPicker=true;
+   status.textContent='First-time save: click Continue to Save As below, then open Desktop → refresh (create the folder if needed). Keep the prefilled filename stock-monitor.xlsx and approve replacement if asked. Later saves update the same approved file. If Save As does not open in an embedded browser, open this page in desktop Chrome or Edge.';
+   button.textContent='Continue to Save As';
+   return;
+  }
   busy=true;button.disabled=true;let writable;
   try{
    if(!handle){
-    if(!window.confirm('First-time Excel save: in the next Save As window, open Desktop → refresh (create the refresh folder if needed). The filename is already filled in as stock-monitor.xlsx. Choose Save and approve replacing the existing file if asked. Later Save Excel clicks will update the same approved file. Continue?'))return;
     // Invoke the picker from the click, before asynchronous permission/storage work.
     const candidate=await window.showSaveFilePicker({id:'stock-monitor-desktop-excel',startIn:'desktop',suggestedName:'stock-monitor.xlsx',excludeAcceptAllOption:true,types:[{description:'Excel workbook',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]});
     if(candidate.name!=='stock-monitor.xlsx')throw Error('Keep the filename stock-monitor.xlsx. No workbook data was written.');
@@ -72,6 +77,6 @@
    if(writable)try{await writable.abort();}catch{}
    if(error.name==='NotFoundError'){handle=null;storedHandle('delete').catch(()=>{});}
    status.textContent=error.name==='AbortError'?'Save cancelled. No file was changed.':'Save failed: '+error.message;
-  }finally{busy=false;button.disabled=false;}
+  }finally{busy=false;button.disabled=false;button.textContent=handle?'Save Excel — Desktop only':'Continue to Save As';}
  };
 })();
