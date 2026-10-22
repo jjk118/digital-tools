@@ -71,7 +71,7 @@
    writable=await handle.createWritable();
    await writable.write(blob);
    await writable.close();writable=null;
-   status.textContent='Saved stock-monitor.xlsx into the refresh folder successfully.';
+   status.textContent='Saved as desktop\\refresh\\stock-monitor.xlsx  successfully.';
    try{await storedHandle('put',handle);}catch{status.textContent+=' Your browser could not remember the file after reload; selection is retained while this page remains open.';}
   }catch(error){
    if(writable)try{await writable.abort();}catch{}
